@@ -1,0 +1,84 @@
+======================================================================
+APP_NAME STANDARDIZATION - IMPLEMENTATION SUMMARY
+======================================================================
+
+Date: 2025-10-28
+Status: ✅ COMPLETE
+
+----------------------------------------------------------------------
+WHAT WAS DONE
+----------------------------------------------------------------------
+
+1. Added ADK configuration constants to src/utils/config.py:
+   - APP_NAME = "research_intelligence_platform"
+   - DEFAULT_USER_ID = "system"
+   - Both configurable via environment variables
+
+2. Updated EntityAgent (src/agents/ingestion/entity_agent.py):
+   - Imports APP_NAME and DEFAULT_USER_ID from config
+   - Uses standardized app_name in session creation
+   - Uses standardized app_name in Runner initialization
+   - Generates unique session IDs using uuid
+
+3. Fixed API key configuration (.env):
+   - Set GOOGLE_API_KEY to same value as GEMINI_API_KEY
+   - ADK prefers GOOGLE_API_KEY when both are set
+
+----------------------------------------------------------------------
+WHY THIS MATTERS
+----------------------------------------------------------------------
+
+✅ Consistency: All agents use the same app_name
+✅ Maintainability: Change once in config, affects everywhere
+✅ Best Practice: Follows ADK session management patterns
+✅ Production Ready: Easy to configure per environment
+
+----------------------------------------------------------------------
+THE APP_NAME MISMATCH WARNING
+----------------------------------------------------------------------
+
+Warning still appears:
+"App name mismatch detected. The runner is configured with app name
+'research_intelligence_platform', but the root agent was loaded from
+'.../.venv/.../google/adk/agents', which implies app name 'agents'."
+
+This is SAFE TO IGNORE because:
+- Known ADK issue (github.com/google/adk-python/issues/3133)
+- Functionality is unaffected
+- Only occurs with programmatically created agents
+- Will be fixed in future ADK version
+
+----------------------------------------------------------------------
+TESTING RESULTS
+----------------------------------------------------------------------
+
+✅ EntityAgent works correctly
+✅ Extracts title, authors, key finding accurately
+✅ Uses standardized APP_NAME throughout
+✅ Generates unique session IDs per extraction
+✅ API authentication working
+
+Sample Output:
+- Title: "Attention Is All You Need"
+- Authors: Ashish Vaswani, Noam Shazeer, Niki Parmar
+- Key Finding: Successfully extracted main contribution
+
+----------------------------------------------------------------------
+NEXT STEPS
+----------------------------------------------------------------------
+
+When creating new agents:
+1. Import: from src.utils.config import APP_NAME, DEFAULT_USER_ID
+2. Use APP_NAME in session_service.create_session()
+3. Use APP_NAME in Runner initialization
+4. Generate unique session_id per invocation
+
+Example:
+  session_id = f"my_agent_{uuid.uuid4().hex[:8]}"
+  session = await session_service.create_session(
+      app_name=APP_NAME,
+      user_id=DEFAULT_USER_ID,
+      session_id=session_id
+  )
+
+======================================================================

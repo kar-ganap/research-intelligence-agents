@@ -1,0 +1,93 @@
+======================================================================
+PDF READER TEST RESULTS
+======================================================================
+
+1. Basic PDF Info:
+----------------------------------------------------------------------
+   File: attention_is_all_you_need.pdf
+   Page count: 15
+   Metadata title: ""
+   Metadata author: ""
+
+2. First Page Content:
+----------------------------------------------------------------------
+Provided proper attribution is provided, Google hereby grants permission to
+reproduce the tables and figures in this paper solely for use in journalistic or
+scholarly works.
+Attention Is All You Need
+Ashish Vaswani∗
+Google Brain
+avaswani@google.com
+Noam Shazeer∗
+Google Brain
+noam@google.com
+Niki Parmar∗
+Google Research
+nikip@google.com
+Jakob Uszkoreit∗
+Google Research
+usz@google.com
+Llion Jones∗
+Google Research
+llion@google.com
+Aidan N. Gomez∗†
+University of Toronto
+aidan@cs.toronto.edu
+Łukasz Kaiser∗
+Google Brain
+lukaszkaiser@google.com
+Illia Polosukhin∗‡
+illia.polosukhin@gmail.com
+Abstract
+The dominant sequence transduction models are based on complex recurrent or
+convolutional neural networks that include an encoder and a decoder. The best
+performing models also connect the encoder and 
+   ...
+
+3. Full PDF Extraction:
+----------------------------------------------------------------------
+   ✅ Successfully extracted text
+   Total pages: 15
+   Total text length: 39,526 characters
+   Average chars per page: 2,635
+
+4. Sample from Page 1 (Title and Authors):
+----------------------------------------------------------------------
+Provided proper attribution is provided, Google hereby grants permission to
+reproduce the tables and figures in this paper solely for use in journalistic or
+scholarly works.
+Attention Is All You Need
+Ashish Vaswani∗
+Google Brain
+avaswani@google.com
+Noam Shazeer∗
+Google Brain
+noam@google.com
+Niki Parmar∗
+Google Research
+nikip@google.com
+Jakob Uszkoreit∗
+Google Research
+usz@google.com
+Llion Jones∗
+Google Research
+llion@google.com
+Aidan N. Gomez∗†
+University of Toronto
+aidan@cs.toronto.edu
+Łukasz Kaiser∗
+Google Brain
+lukaszkaiser@google.com
+Illia Polosukhin∗‡
+illia.polosukhin@gmail.com
+Abstract
+The dominant sequence transduction models are based on complex recurrent or
+convolutional neural networks that include an encoder and a decoder. The best
+performing models also connect the encoder and decoder through an attention
+mechanism. We propose a new simple network architecture, the Transformer,
+based solely on attention mechanisms, dispensing with recurrence and convolutions
+entirely. Exper
+
+======================================================================
+✅ PDF READER IS WORKING CORRECTLY\!
+======================================================================

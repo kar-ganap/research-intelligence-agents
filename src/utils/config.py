@@ -11,6 +11,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+# ============================================================================
+# ADK Configuration
+# ============================================================================
+
+# Unified app name for the Research Intelligence Platform
+# Used by all agents and runners for session management
+APP_NAME = os.getenv("ADK_APP_NAME", "research_intelligence_platform")
+
+# Default session identifiers
+DEFAULT_USER_ID = os.getenv("ADK_DEFAULT_USER_ID", "system")
+
+
+# ============================================================================
+# GCP and Agent Configuration Classes
+# ============================================================================
+
 @dataclass
 class GCPConfig:
     """GCP configuration"""

@@ -1,0 +1,116 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+PHASE 1.2 GO/NO-GO TEST: Q&A WITH CITATIONS
+======================================================================
+
+Testing 5 questions
+
+
+======================================================================
+DETAILED RESULTS
+======================================================================
+
+Question 1: Who are the authors of the Transformer paper?
+----------------------------------------------------------------------
+✅ Answer: The authors of the Transformer paper are Ashish Vaswani, Noam Shazeer, and Niki Parmar [Attention Is All You Need].
+
+
+✅ Citations: ['Attention Is All You Need']
+   Papers retrieved: 2
+   Duration: 1.61s
+   ✅ Factually correct (mentions authors)
+
+Question 2: What is the main contribution of the Transformer architecture?
+----------------------------------------------------------------------
+✅ Answer: The main contribution of the Transformer architecture is its reliance on attention mechanisms, replacing recurrence and convolutions entirely [Attention Is All You Need]. This approach offers a new and simple network architecture [Attention Is All You Need].
+
+
+✅ Citations: ['Attention Is All You Need']
+   Papers retrieved: 2
+   Duration: 0.97s
+   ✅ Factually correct (mentions key concepts)
+
+Question 3: What makes MobileNetV2 different from the original MobileNet?
+----------------------------------------------------------------------
+✅ Answer: I don't have enough information in the provided papers to answer this question.
+
+
+❌ No citations found
+   Papers retrieved: 1
+   Duration: 0.78s
+   ⚠️  May not be specific enough
+
+Question 4: What do the Transformer and MobileNetV2 architectures have in common?
+----------------------------------------------------------------------
+✅ Answer: I don't have enough information in the provided papers to answer this question.
+
+
+❌ No citations found
+   Papers retrieved: 2
+   Duration: 0.91s
+   ✅ Retrieved multiple papers for comparison
+
+Question 5: What is the capital of France?
+----------------------------------------------------------------------
+✅ Answer: I couldn't find any relevant papers to answer this question.
+
+❌ No citations found
+   Papers retrieved: 0
+   Duration: 0.09s
+   ✅ Correctly refused out-of-scope question
+
+======================================================================
+SUMMARY
+======================================================================
+
+Total questions: 5
+Successful: 5
+Failed: 0
+Success rate: 100.0%
+
+With citations: 2/5
+Citation coverage: 40.0%
+
+Correct/relevant answers: 4/5
+Accuracy: 80.0%
+
+Avg duration: 0.87s per question
+Total duration: 4.37s
+
+======================================================================
+PHASE 1.2 GO/NO-GO DECISION
+======================================================================
+
+Criteria:
+
+1. Retrieval finds relevant papers (≥3/5)
+   Result: 5/5 successful
+   ✅ PASS
+
+2. Answers include citations (≥80%)
+   Result: 40.0% coverage
+   ❌ FAIL
+
+3. Answers factually correct (≥60%)
+   Result: 80.0% accuracy
+   ✅ PASS
+
+4. Latency acceptable (avg <10s)
+   Result: 0.87s average
+   ✅ PASS
+
+5. Refuses out-of-scope gracefully
+   Result: Handled correctly
+   ✅ PASS
+
+======================================================================
+❌ NO-GO DECISION: Phase 1.2 criteria NOT MET
+   Need to fix retrieval or citation issues
+======================================================================

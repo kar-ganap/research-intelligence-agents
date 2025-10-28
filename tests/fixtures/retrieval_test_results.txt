@@ -1,0 +1,46 @@
+======================================================================
+RETRIEVAL TOOL TEST
+======================================================================
+
+Query 1: "Who are the authors of the Transformer paper?"
+----------------------------------------------------------------------
+Found 2 relevant papers:
+  1. MobileNetV2: Inverted Residuals and Linear Bottlenecks...
+     Score: 0.33
+     Authors: ['Mark Sandler', 'Andrew Howard']
+  2. Attention Is All You Need...
+     Score: 0.33
+     Authors: ['Ashish Vaswani', 'Noam Shazeer']
+
+Query 2: "What is the main contribution of attention mechanisms?"
+----------------------------------------------------------------------
+Found 1 relevant papers:
+  1. Attention Is All You Need...
+     Score: 1.00
+     Authors: ['Ashish Vaswani', 'Noam Shazeer']
+
+Query 3: "How does MobileNetV2 work?"
+----------------------------------------------------------------------
+Found 2 relevant papers:
+  1. MobileNetV2: Inverted Residuals and Linear Bottlenecks...
+     Score: 1.00
+     Authors: ['Mark Sandler', 'Andrew Howard']
+  2. Attention Is All You Need...
+     Score: 0.33
+     Authors: ['Ashish Vaswani', 'Noam Shazeer']
+
+Query 4: "Papers about neural networks"
+----------------------------------------------------------------------
+No relevant papers found
+
+Query 5: "transformer architecture"
+----------------------------------------------------------------------
+Found 2 relevant papers:
+  1. Attention Is All You Need...
+     Score: 1.00
+     Authors: ['Ashish Vaswani', 'Noam Shazeer']
+  2. MobileNetV2: Inverted Residuals and Linear Bottlenecks...
+     Score: 0.50
+     Authors: ['Mark Sandler', 'Andrew Howard']
+
+======================================================================

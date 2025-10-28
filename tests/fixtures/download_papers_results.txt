@@ -1,0 +1,35 @@
+/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/scripts/download_test_papers.py:31: DeprecationWarning: The 'Search.results' method is deprecated, use 'Client.results' instead
+  paper = next(search.results())
+======================================================================
+DOWNLOADING TEST PAPERS FROM ARXIV
+======================================================================
+
+Paper: Attention Is All You Need (NLP/Deep Learning)
+arXiv ID: 1706.03762
+Downloading 1706.03762...
+✅ Downloaded: Attention Is All You Need
+   Saved to: tests/fixtures/sample_papers/1706_03762.pdf
+   Authors: Ashish Vaswani, Noam Shazeer, Niki Parmar
+
+Paper: MobileNetV2 (Computer Vision)
+arXiv ID: 1801.04381
+Downloading 1801.04381...
+✅ Downloaded: MobileNetV2: Inverted Residuals and Linear Bottlenecks
+   Saved to: tests/fixtures/sample_papers/1801_04381.pdf
+   Authors: Mark Sandler, Andrew Howard, Menglong Zhu
+
+Paper: GPT-3 (Language Models)
+arXiv ID: 2005.14165
+Downloading 2005.14165...
+✅ Downloaded: Language Models are Few-Shot Learners
+   Saved to: tests/fixtures/sample_papers/2005_14165.pdf
+   Authors: Tom B. Brown, Benjamin Mann, Nick Ryder
+
+======================================================================
+DOWNLOAD SUMMARY
+======================================================================
+Total: 3
+Successful: 3
+Failed: 0
+
+✅ Sufficient papers downloaded for testing
