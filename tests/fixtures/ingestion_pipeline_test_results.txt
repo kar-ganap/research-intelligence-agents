@@ -1,0 +1,39 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+INGESTION PIPELINE TEST
+======================================================================
+
+Initializing pipeline...
+✅ Pipeline initialized
+
+Ingesting paper: tests/fixtures/sample_papers/attention_is_all_you_need.pdf
+arXiv ID: 1706.03762
+
+
+======================================================================
+PIPELINE RESULTS
+======================================================================
+
+✅ PIPELINE SUCCESS
+   Paper ID: a7e340db90f7b84f
+   Duration: 2.21s
+
+Step Details:
+  pdf_extraction:
+    Success: True
+    Duration: 0.18s
+    Pages: 15
+    Text length: 39526 chars
+  entity_extraction:
+    Success: True
+    Duration: 1.34s
+    Title: Attention Is All You Need...
+    Authors: 3
+  indexing:
+    Success: True
+    Duration: 0.68s
+    Paper ID: a7e340db90f7b84f
+    Note: Paper already existed in database
+
+======================================================================

@@ -1,0 +1,28 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+ENTITY AGENT TEST (Standardized APP_NAME)
+======================================================================
+
+Reading PDF: tests/fixtures/sample_papers/attention_is_all_you_need.pdf
+✅ Extracted 39526 characters
+
+Creating EntityAgent...
+✅ EntityAgent created
+
+Extracting entities from paper...
+
+EXTRACTED ENTITIES:
+======================================================================
+Title: Attention Is All You Need
+
+Authors:
+  1. Ashish Vaswani
+  2. Noam Shazeer
+  3. Niki Parmar
+
+Key Finding: The paper proposes a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely, which achieves superior results on machine translation tasks while being more parallelizable and requiring significantly less time to train.
+
+✅ Entity extraction successful\!
+
+======================================================================

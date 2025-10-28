@@ -1,0 +1,27 @@
+App name mismatch detected. The runner is configured with app name "entity_extraction", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+======================================================================
+ENTITY AGENT TEST (With ADK Runner)
+======================================================================
+
+Reading PDF: tests/fixtures/sample_papers/attention_is_all_you_need.pdf
+✅ Extracted 39526 characters
+
+Creating EntityAgent...
+✅ EntityAgent created
+
+Extracting entities from paper...
+
+EXTRACTED ENTITIES:
+======================================================================
+Title: Attention Is All You Need
+
+Authors:
+  1. Ashish Vaswani
+  2. Noam Shazeer
+  3. Niki Parmar
+
+Key Finding: We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.
+
+✅ Entity extraction successful\!
+
+======================================================================

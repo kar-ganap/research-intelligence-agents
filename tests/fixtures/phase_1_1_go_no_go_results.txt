@@ -1,0 +1,55 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+PHASE 1.1 GO/NO-GO TEST: BATCH INGESTION
+======================================================================
+
+Testing ingestion pipeline on 3 papers
+
+
+======================================================================
+BATCH INGESTION RESULTS
+======================================================================
+
+Total papers: 3
+Successful: 3
+Failed: 0
+Success rate: 100.0%
+Avg duration: 1.71s per paper
+Total duration: 5.14s
+
+Individual Results:
+----------------------------------------------------------------------
+1. ✅ 1706_03762.pdf
+   arXiv: 1706.03762
+   Duration: 1.90s
+   Paper ID: a7e340db90f7b84f
+   Title: Attention Is All You Need...
+
+2. ✅ 1801_04381.pdf
+   arXiv: 1801.04381
+   Duration: 1.52s
+   Paper ID: f1b4c3f0f778d6e3
+   Title: MobileNetV2: Inverted Residuals and Linear Bottlenecks...
+
+3. ✅ 2005_14165.pdf
+   arXiv: 2005.14165
+   Duration: 1.72s
+   Paper ID: 52629ac61252cdd3
+   Title: Language Models are Few-Shot Learners...
+
+======================================================================
+PHASE 1.1 GO/NO-GO DECISION
+======================================================================
+
+Required success rate: ≥66%
+Actual success rate:   100.0%
+
+✅ GO DECISION: Phase 1.1 criteria MET
+   Pipeline is reliable enough to proceed to Phase 1.2
+
+======================================================================

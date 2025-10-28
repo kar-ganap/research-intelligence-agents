@@ -1,0 +1,28 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+ANSWER AGENT TEST
+======================================================================
+
+Question: "What is the main contribution of the Transformer architecture?"
+
+Step 1: Retrieving relevant papers...
+✅ Retrieved 2 papers
+  1. Attention Is All You Need... (score: 0.50)
+  2. MobileNetV2: Inverted Residuals and Linear Bottlen... (score: 0.25)
+
+Step 2: Generating answer with citations...
+
+======================================================================
+ANSWER
+======================================================================
+The main contribution of the Transformer architecture is its reliance on attention mechanisms, removing the need for recurrence and convolutions [Attention Is All You Need]. The Transformer architecture is a novel and simple network design [Attention Is All You Need].
+
+
+======================================================================
+ANALYSIS
+======================================================================
+Has citations: Yes
+Citations found: ['Attention Is All You Need', 'Attention Is All You Need']
+
+======================================================================

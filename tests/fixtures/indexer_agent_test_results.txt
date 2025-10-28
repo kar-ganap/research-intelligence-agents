@@ -1,0 +1,28 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+INDEXER AGENT TEST
+======================================================================
+
+Step 1: Reading PDF: tests/fixtures/sample_papers/attention_is_all_you_need.pdf
+✅ Extracted 39526 characters
+
+Step 2: Extracting entities with EntityAgent...
+✅ Extracted entities:
+   Title: Attention Is All You Need
+   Authors: 3 authors
+   Finding: We propose a new simple network architecture, the Transformer, based solely on a...
+
+Step 3: Indexing to Firestore...
+
+✅ Indexing successful\!
+   Paper ID: a7e340db90f7b84f
+   Message: Paper indexed successfully
+
+Step 4: Verifying by retrieving from Firestore...
+✅ Retrieved successfully\!
+   Title: Attention Is All You Need
+   Authors: ['Ashish Vaswani', 'Noam Shazeer', 'Niki Parmar']
+   Ingested at: 2025-10-28 18:33:41.151000+00:00
+
+======================================================================

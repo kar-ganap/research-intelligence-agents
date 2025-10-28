@@ -1,0 +1,210 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+COMPREHENSIVE Q&A TEST - PHASE 1.2
+======================================================================
+
+Testing 10 questions
+  Answerable: 7
+  Should refuse: 3
+
+
+======================================================================
+DETAILED RESULTS
+======================================================================
+
+Question 1: Who are the authors of the Transformer paper?
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: The authors of the Transformer paper are Ashish Vaswani, Noam Shazeer, and Niki Parmar [Attention Is All You Need].
+
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['Attention Is All You Need']
+✅ Correct citation: Attention Is All You Need
+Papers retrieved: 2
+Duration: 1.51s
+
+Question 2: What is the main innovation of the Transformer architecture?
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: The main innovation of the Transformer architecture is its reliance on attention mechanisms, completely removing recurrence and convolutions [Attention Is All You Need]. This departure from previous m...
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['Attention Is All You Need']
+✅ Correct citation: Attention Is All You Need
+Papers retrieved: 2
+Duration: 1.06s
+
+Question 3: What are few-shot learners?
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: Few-shot learners are language models that can perform competitively with state-of-the-art fine-tuning approaches when scaled up, even without task-specific training [Language Models are Few-Shot Lear...
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['Language Models are Few-Shot Learners']
+✅ Correct citation: Language Models are Few-Shot Learners
+Papers retrieved: 1
+Duration: 1.18s
+
+Question 4: What is MobileNetV2 about?
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: MobileNetV2 is a new mobile architecture that improves the performance of mobile models on several tasks and benchmarks across different model sizes [MobileNetV2: Inverted Residuals and Linear Bottlen...
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['MobileNetV2: Inverted Residuals and Linear Bottlenecks']
+✅ Correct citation: MobileNetV2
+Papers retrieved: 1
+Duration: 0.91s
+
+Question 5: Tell me about the Transformer model
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: The Transformer is a novel network architecture relying solely on attention mechanisms, thereby avoiding recurrence and convolutions [Attention Is All You Need].
+
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['Attention Is All You Need']
+✅ Correct citation: Attention Is All You Need
+Papers retrieved: 3
+Duration: 0.91s
+
+Question 6: What papers discuss language models?
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: "Language Models are Few-Shot Learners" discusses language models [Language Models are Few-Shot Learners]. It specifically mentions GPT-3, an autoregressive language model with 175 billion parameters ...
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['Language Models are Few-Shot Learners']
+✅ Correct citation: Language Models are Few-Shot Learners
+Papers retrieved: 2
+Duration: 0.93s
+
+Question 7: What paper did Ashish Vaswani author?
+----------------------------------------------------------------------
+Expected: Answer
+Actual: Answered
+
+Answer: Ashish Vaswani is an author of "Attention Is All You Need" [Attention Is All You Need]. In this paper, the authors propose the Transformer architecture based solely on attention mechanisms [Attention ...
+
+✅ CORRECT: Answered appropriately
+✅ Has citations: ['Attention Is All You Need']
+✅ Correct citation: Attention Is All You Need
+Papers retrieved: 2
+Duration: 0.91s
+
+Question 8: Which is better, Transformer or LSTM?
+----------------------------------------------------------------------
+Expected: Refuse
+Actual: Answered
+
+Answer: The Transformer architecture relies exclusively on attention mechanisms, avoiding recurrence, which is used in LSTMs, and convolutions [Attention Is All You Need]. The Transformer architecture was pro...
+
+❌ INCORRECT: Should have refused but answered
+Papers retrieved: 1
+Duration: 1.31s
+
+Question 9: What is the exact learning rate used in GPT-3 training?
+----------------------------------------------------------------------
+Expected: Refuse
+Actual: Refused
+
+Answer: I don't have enough information in the provided papers to answer this question.
+
+
+✅ CORRECT: Appropriately refused
+   Reason: Technical detail not in key findings
+Papers retrieved: 1
+Duration: 0.91s
+
+Question 10: What is the capital of France?
+----------------------------------------------------------------------
+Expected: Refuse
+Actual: Refused
+
+Answer: I couldn't find any relevant papers to answer this question.
+
+✅ CORRECT: Appropriately refused
+   Reason: Out of scope
+Papers retrieved: 0
+Duration: 0.10s
+
+======================================================================
+SUMMARY
+======================================================================
+
+Total questions: 10
+  Should answer: 7
+  Should refuse: 3
+
+Performance:
+  Correct answers: 7/7 (100.0%)
+  Correct refusals: 2/3 (66.7%)
+  Incorrect (answered when should refuse): 1
+  Incorrect (refused when should answer): 0
+
+Citations:
+  Questions with citations: 7/7
+  Citation coverage: 100.0%
+  Correct citations: 7/7
+  Citation accuracy: 100.0%
+
+Overall accuracy: 9/10 (90.0%)
+
+======================================================================
+PHASE 1.2 GO/NO-GO DECISION
+======================================================================
+
+1. Answers enough questions (≥5/7 answerable)
+   Result: 7/7
+   ✅ PASS
+
+2. Citation coverage (≥80% of answers)
+   Result: 7/7 = 100.0%
+   ✅ PASS
+
+3. Citation accuracy (≥70% cite correct paper)
+   Result: 7/7 = 100.0%
+   ✅ PASS
+
+4. Appropriate refusals (≥2/3)
+   Result: 2/3
+   ✅ PASS
+
+5. Overall accuracy (≥70%)
+   Result: 9/10 = 90.0%
+   ✅ PASS
+
+======================================================================
+✅ GO DECISION: All Phase 1.2 criteria MET
+   Q&A pipeline ready for Phase 2
+======================================================================
