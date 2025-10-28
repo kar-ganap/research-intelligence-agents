@@ -1,0 +1,57 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+RELATIONSHIP DETECTION TEST - PHASE 2.1
+======================================================================
+
+Fetching papers from Firestore...
+Found 3 papers in corpus
+
+======================================================================
+TESTING RELATIONSHIP DETECTION
+======================================================================
+
+⚠️  Test 1 skipped: Couldn't find Transformer and GPT-3 papers
+
+⚠️  Test 2 skipped: Couldn't find Transformer and MobileNetV2 papers
+
+Test 3: Batch Relationship Detection
+----------------------------------------------------------------------
+Comparing first paper against all others...
+
+New paper: Language Models are Few-Shot Learners...
+Comparing against 2 papers
+
+Found 1 relationships above threshold
+  1. extends (confidence: 0.75)
+     → Attention Is All You Need...
+
+======================================================================
+SUMMARY
+======================================================================
+
+Tests run: 1
+Passed: 1/1
+
+✅ Batch detection
+   Expected: ≥1 relationship
+   Actual: 1 relationships
+
+======================================================================
+PHASE 2.1 GO/NO-GO DECISION
+======================================================================
+
+1. Relationship detection works
+   Result: 1/1 tests passed
+   ✅ PASS
+
+2. Check existing relationships in Firestore
+   Result: 0 relationships stored
+   ✅ PASS
+
+======================================================================
+✅ GO DECISION: Phase 2.1 basic functionality working
+   Relationship detection is operational
+======================================================================

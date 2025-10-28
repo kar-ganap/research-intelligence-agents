@@ -26,6 +26,7 @@ class FirestoreClient:
             self.db = firestore.Client()
 
         self.papers_collection = "papers"
+        self.relationships_collection = "relationships"
 
     def generate_paper_id(self, title: str, authors: List[str]) -> str:
         """
@@ -174,3 +175,139 @@ class FirestoreClient:
 
         doc_ref.delete()
         return True
+
+    # ========================================================================
+    # Relationship Operations
+    # ========================================================================
+
+    def store_relationship(self, relationship_data: Dict) -> str:
+        """
+        Store a relationship between papers in Firestore.
+
+        Args:
+            relationship_data: Dictionary containing:
+                - source_paper_id: str
+                - target_paper_id: str
+                - relationship_type: str (supports/contradicts/extends)
+                - confidence: float (0.0-1.0)
+                - evidence: str
+
+        Returns:
+            Document ID of the stored relationship
+        """
+        # Generate unique relationship ID
+        relationship_id = hashlib.sha256(
+            f"{relationship_data['source_paper_id']}_"
+            f"{relationship_data['target_paper_id']}_"
+            f"{relationship_data['relationship_type']}".encode()
+        ).hexdigest()[:16]
+
+        # Add metadata
+        doc_data = {
+            "source_paper_id": relationship_data.get("source_paper_id", ""),
+            "target_paper_id": relationship_data.get("target_paper_id", ""),
+            "relationship_type": relationship_data.get("relationship_type", "none"),
+            "confidence": relationship_data.get("confidence", 0.0),
+            "evidence": relationship_data.get("evidence", ""),
+            "detected_by": relationship_data.get("detected_by", "RelationshipAgent"),
+            "detected_at": firestore.SERVER_TIMESTAMP,
+        }
+
+        # Store in Firestore
+        doc_ref = self.db.collection(self.relationships_collection).document(relationship_id)
+        doc_ref.set(doc_data)
+
+        return relationship_id
+
+    def get_relationship(self, relationship_id: str) -> Optional[Dict]:
+        """
+        Retrieve a relationship from Firestore.
+
+        Args:
+            relationship_id: Document ID
+
+        Returns:
+            Relationship data dictionary or None if not found
+        """
+        doc_ref = self.db.collection(self.relationships_collection).document(relationship_id)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            return doc.to_dict()
+        return None
+
+    def get_relationships_for_paper(self, paper_id: str) -> List[Dict]:
+        """
+        Get all relationships where a paper is the source.
+
+        Args:
+            paper_id: Paper ID to find relationships for
+
+        Returns:
+            List of relationship dictionaries
+        """
+        docs = (
+            self.db.collection(self.relationships_collection)
+            .where("source_paper_id", "==", paper_id)
+            .stream()
+        )
+
+        relationships = []
+        for doc in docs:
+            rel_data = doc.to_dict()
+            rel_data["relationship_id"] = doc.id
+            relationships.append(rel_data)
+
+        return relationships
+
+    def get_all_relationships(self, limit: int = 100) -> List[Dict]:
+        """
+        Get all relationships in the graph.
+
+        Args:
+            limit: Maximum number of relationships to return
+
+        Returns:
+            List of relationship dictionaries
+        """
+        docs = (
+            self.db.collection(self.relationships_collection)
+            .order_by("detected_at", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream()
+        )
+
+        relationships = []
+        for doc in docs:
+            rel_data = doc.to_dict()
+            rel_data["relationship_id"] = doc.id
+            relationships.append(rel_data)
+
+        return relationships
+
+    def count_relationships(self) -> int:
+        """
+        Count total number of relationships.
+
+        Returns:
+            Number of relationships in Firestore
+        """
+        docs = self.db.collection(self.relationships_collection).stream()
+        return sum(1 for _ in docs)
+
+    def get_all_papers(self) -> List[Dict]:
+        """
+        Get all papers in the corpus (for relationship detection).
+
+        Returns:
+            List of all paper dictionaries with paper_id
+        """
+        docs = self.db.collection(self.papers_collection).stream()
+
+        papers = []
+        for doc in docs:
+            paper_data = doc.to_dict()
+            paper_data["paper_id"] = doc.id
+            papers.append(paper_data)
+
+        return papers

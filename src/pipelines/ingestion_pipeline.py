@@ -17,6 +17,7 @@ import time
 from src.tools.pdf_reader import read_pdf
 from src.agents.ingestion.entity_agent import EntityAgent
 from src.agents.ingestion.indexer_agent import IndexerAgent
+from src.agents.ingestion.relationship_agent import RelationshipAgent
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +30,24 @@ class IngestionPipeline:
     Explicitly passes data between components for clarity.
     """
 
-    def __init__(self, project_id: str = None):
+    def __init__(self, project_id: str = None, enable_relationships: bool = False):
         """
         Initialize the ingestion pipeline.
 
         Args:
             project_id: GCP project ID for Firestore
+            enable_relationships: Whether to detect relationships (Phase 2.1 feature)
         """
         self.entity_agent = EntityAgent()
         self.indexer_agent = IndexerAgent(project_id=project_id)
-        logger.info("IngestionPipeline initialized")
+        self.enable_relationships = enable_relationships
+
+        if enable_relationships:
+            self.relationship_agent = RelationshipAgent()
+            logger.info("IngestionPipeline initialized with relationship detection")
+        else:
+            self.relationship_agent = None
+            logger.info("IngestionPipeline initialized (relationships disabled)")
 
     def ingest_paper(self, pdf_path: str, arxiv_id: str = "") -> Dict:
         """
@@ -128,6 +137,53 @@ class IngestionPipeline:
                 result["error"] = f"Indexing failed: {index_result.get('error')}"
                 result["duration"] = time.time() - start_time
                 return result
+
+            # Step 4 (Optional): Detect relationships
+            if self.enable_relationships and self.relationship_agent:
+                logger.info("Step 4/4: Detecting relationships")
+                step_start = time.time()
+
+                try:
+                    # Get all existing papers from Firestore
+                    existing_papers = self.indexer_agent.firestore_client.get_all_papers()
+
+                    # Create paper object for new paper
+                    new_paper = {
+                        'paper_id': index_result['paper_id'],
+                        'title': entities.get('title', ''),
+                        'authors': entities.get('authors', []),
+                        'key_finding': entities.get('key_finding', '')
+                    }
+
+                    # Detect relationships
+                    relationships = self.relationship_agent.detect_relationships_batch(
+                        new_paper=new_paper,
+                        existing_papers=existing_papers,
+                        min_confidence=0.6
+                    )
+
+                    # Store relationships in Firestore
+                    relationship_ids = []
+                    for rel in relationships:
+                        rel_id = self.indexer_agent.firestore_client.store_relationship(rel)
+                        relationship_ids.append(rel_id)
+
+                    result["steps"]["relationship_detection"] = {
+                        "success": True,
+                        "relationships_found": len(relationships),
+                        "relationship_ids": relationship_ids,
+                        "duration": time.time() - step_start
+                    }
+
+                    logger.info(f"Found {len(relationships)} relationships")
+
+                except Exception as e:
+                    logger.warning(f"Relationship detection failed (non-blocking): {e}")
+                    result["steps"]["relationship_detection"] = {
+                        "success": False,
+                        "error": str(e),
+                        "duration": time.time() - step_start
+                    }
 
             # All steps successful
             result["success"] = True
