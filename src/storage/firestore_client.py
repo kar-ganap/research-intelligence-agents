@@ -27,6 +27,8 @@ class FirestoreClient:
 
         self.papers_collection = "papers"
         self.relationships_collection = "relationships"
+        self.watch_rules_collection = "watch_rules"
+        self.alerts_collection = "alerts"
 
     def generate_paper_id(self, title: str, authors: List[str]) -> str:
         """
@@ -311,3 +313,215 @@ class FirestoreClient:
             papers.append(paper_data)
 
         return papers
+
+    # ========================================================================
+    # Watch Rules Operations
+    # ========================================================================
+
+    def create_watch_rule(self, rule_data: Dict) -> str:
+        """
+        Create a watch rule for proactive alerting.
+
+        Args:
+            rule_data: Dictionary containing:
+                - user_id: str
+                - name: str
+                - rule_type: str (keyword/claim/relationship/author/template)
+                - keywords: List[str] (optional, for keyword type)
+                - claim_description: str (optional, for claim type)
+                - target_paper_id: str (optional, for relationship type)
+                - relationship_type: str (optional, for relationship type)
+                - authors: List[str] (optional, for author type)
+                - template_name: str (optional, for template type)
+                - template_params: Dict (optional, for template type)
+                - min_relevance_score: float (default 0.7)
+                - active: bool (default True)
+
+        Returns:
+            Rule ID
+        """
+        import uuid
+        rule_id = f"rule_{uuid.uuid4().hex[:12]}"
+
+        doc_data = {
+            "user_id": rule_data.get("user_id", ""),
+            "name": rule_data.get("name", ""),
+            "rule_type": rule_data.get("rule_type", "keyword"),
+            "keywords": rule_data.get("keywords", []),
+            "claim_description": rule_data.get("claim_description", ""),
+            "target_paper_id": rule_data.get("target_paper_id", ""),
+            "relationship_type": rule_data.get("relationship_type", ""),
+            "authors": rule_data.get("authors", []),
+            "template_name": rule_data.get("template_name", ""),
+            "template_params": rule_data.get("template_params", {}),
+            "min_relevance_score": rule_data.get("min_relevance_score", 0.7),
+            "active": rule_data.get("active", True),
+            "created_at": firestore.SERVER_TIMESTAMP,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+        }
+
+        doc_ref = self.db.collection(self.watch_rules_collection).document(rule_id)
+        doc_ref.set(doc_data)
+
+        return rule_id
+
+    def get_watch_rule(self, rule_id: str) -> Optional[Dict]:
+        """Get a watch rule by ID."""
+        doc_ref = self.db.collection(self.watch_rules_collection).document(rule_id)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            rule = doc.to_dict()
+            rule["rule_id"] = doc.id
+            return rule
+        return None
+
+    def get_watch_rules(self, user_id: str) -> List[Dict]:
+        """Get all watch rules for a user."""
+        docs = (
+            self.db.collection(self.watch_rules_collection)
+            .where("user_id", "==", user_id)
+            .stream()
+        )
+
+        rules = []
+        for doc in docs:
+            rule = doc.to_dict()
+            rule["rule_id"] = doc.id
+            rules.append(rule)
+
+        return rules
+
+    def get_all_active_rules(self) -> List[Dict]:
+        """Get all active watch rules."""
+        docs = (
+            self.db.collection(self.watch_rules_collection)
+            .where("active", "==", True)
+            .stream()
+        )
+
+        rules = []
+        for doc in docs:
+            rule = doc.to_dict()
+            rule["rule_id"] = doc.id
+            rules.append(rule)
+
+        return rules
+
+    def update_watch_rule(self, rule_id: str, updates: Dict) -> bool:
+        """Update a watch rule."""
+        doc_ref = self.db.collection(self.watch_rules_collection).document(rule_id)
+
+        if not doc_ref.get().exists:
+            return False
+
+        updates["updated_at"] = firestore.SERVER_TIMESTAMP
+        doc_ref.update(updates)
+        return True
+
+    def delete_watch_rule(self, rule_id: str) -> bool:
+        """Delete a watch rule."""
+        doc_ref = self.db.collection(self.watch_rules_collection).document(rule_id)
+
+        if not doc_ref.get().exists:
+            return False
+
+        doc_ref.delete()
+        return True
+
+    # ========================================================================
+    # Alerts Operations
+    # ========================================================================
+
+    def create_alert(self, alert_data: Dict) -> str:
+        """
+        Create an alert when a paper matches a watch rule.
+
+        Args:
+            alert_data: Dictionary containing:
+                - user_id: str
+                - rule_id: str
+                - paper_id: str
+                - match_score: float
+                - match_explanation: str (optional)
+                - paper_title: str (denormalized)
+                - paper_authors: List[str] (denormalized)
+                - status: str (default 'pending')
+
+        Returns:
+            Alert ID
+        """
+        import uuid
+        alert_id = f"alert_{uuid.uuid4().hex[:12]}"
+
+        doc_data = {
+            "user_id": alert_data.get("user_id", ""),
+            "rule_id": alert_data.get("rule_id", ""),
+            "paper_id": alert_data.get("paper_id", ""),
+            "match_score": alert_data.get("match_score", 0.0),
+            "match_explanation": alert_data.get("match_explanation", ""),
+            "paper_title": alert_data.get("paper_title", ""),
+            "paper_authors": alert_data.get("paper_authors", []),
+            "status": alert_data.get("status", "pending"),
+            "created_at": firestore.SERVER_TIMESTAMP,
+            "sent_at": None,
+            "read_at": None,
+        }
+
+        doc_ref = self.db.collection(self.alerts_collection).document(alert_id)
+        doc_ref.set(doc_data)
+
+        return alert_id
+
+    def get_alerts(self, user_id: str, status: Optional[str] = None) -> List[Dict]:
+        """Get alerts for a user, optionally filtered by status."""
+        query = self.db.collection(self.alerts_collection).where("user_id", "==", user_id)
+
+        if status:
+            query = query.where("status", "==", status)
+
+        docs = query.order_by("created_at", direction=firestore.Query.DESCENDING).stream()
+
+        alerts = []
+        for doc in docs:
+            alert = doc.to_dict()
+            alert["alert_id"] = doc.id
+            alerts.append(alert)
+
+        return alerts
+
+    def mark_alert_sent(self, alert_id: str) -> bool:
+        """Mark an alert as sent."""
+        doc_ref = self.db.collection(self.alerts_collection).document(alert_id)
+
+        if not doc_ref.get().exists:
+            return False
+
+        doc_ref.update({
+            "status": "sent",
+            "sent_at": firestore.SERVER_TIMESTAMP
+        })
+        return True
+
+    def mark_alert_read(self, alert_id: str) -> bool:
+        """Mark an alert as read by user."""
+        doc_ref = self.db.collection(self.alerts_collection).document(alert_id)
+
+        if not doc_ref.get().exists:
+            return False
+
+        doc_ref.update({
+            "status": "read",
+            "read_at": firestore.SERVER_TIMESTAMP
+        })
+        return True
+
+    def count_alerts(self, user_id: str, status: Optional[str] = None) -> int:
+        """Count alerts for a user."""
+        query = self.db.collection(self.alerts_collection).where("user_id", "==", user_id)
+
+        if status:
+            query = query.where("status", "==", status)
+
+        docs = query.stream()
+        return sum(1 for _ in docs)

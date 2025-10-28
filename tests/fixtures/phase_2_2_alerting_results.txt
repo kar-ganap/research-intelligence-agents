@@ -1,0 +1,149 @@
+/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/cloud/firestore_v1/base_collection.py:304: UserWarning: Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.
+  return query.where(field_path, op_string, value)
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+PHASE 2.2: PROACTIVE ALERTING - END-TO-END TEST
+======================================================================
+
+======================================================================
+SETTING UP TEST WATCH RULES
+======================================================================
+
+1. Creating KEYWORD rule (watch for 'transformer' and 'attention')
+   Created: rule_e3fe03c53770
+
+2. Creating CLAIM rule (natural language)
+   Created: rule_82d87ce996dd
+
+3. Creating RELATIONSHIP rule (watch for contradictions to 'Language Models are Few-Shot Learners...')
+   Created: rule_ee97dd9057d2
+
+4. Creating AUTHOR rule (watch for 'Vaswani' and 'Brown')
+   Created: rule_61c55fd0faf4
+
+5. Creating TEMPLATE rule (performance improvement on benchmark)
+   Created: rule_3945fcce4e48
+
+✅ Created 5 watch rules
+
+Initial alerts: 0
+
+======================================================================
+TESTING ALERT CREATION
+======================================================================
+
+Test 1: Attention Is All You Need...
+  Expected to trigger: keyword, author
+  Reason: Contains 'transformer' and 'attention' keywords, authored by Vaswani
+
+  ✅ KEYWORD matched (score: 1.00)
+     Matched 2/2 keywords: transformer, attention
+  ✅ AUTHOR matched
+     Authored by: Ashish Vaswani
+  ✅ PASS: Matched expected rules
+
+Test 2: Scaling Laws for Neural Language Models...
+  Expected to trigger: claim
+  Reason: Directly addresses scaling laws for language models
+
+  ✅ CLAIM matched (score: 1.00)
+     The paper explicitly studies scaling laws for language model performance as a function of model size, dataset size, and compute, which perfectly aligns with the claim.
+  ✅ PASS: Matched expected rules
+
+Test 3: BERT: Pre-training of Deep Bidirectional Transform...
+  Expected to trigger: keyword
+  Reason: Contains 'transformer' keyword
+
+  ✅ KEYWORD matched (score: 0.50)
+     Matched 1/2 keywords: transformer
+  ✅ TEMPLATE matched (score: 0.70)
+     The paper claims state-of-the-art results on multiple NLP tasks, and GLUE is a common benchmark. It is very likely that the model improved performance on GLUE, but we cannot be certain without explicit confirmation.
+  ⚠️  EXTRA: template
+
+Test 4: Language Models are Few-Shot Learners...
+  Expected to trigger: author, claim
+  Reason: Authored by Tom Brown, and discusses scaling
+
+  ✅ CLAIM matched (score: 0.90)
+     The paper investigates how language model performance scales with model size. The key finding mentions scaling up language models improves performance.
+  ✅ AUTHOR matched
+     Authored by: Tom Brown
+  ✅ PASS: Matched expected rules
+
+Test 5: RoBERTa: A Robustly Optimized BERT Pretraining App...
+  Expected to trigger: template, keyword
+  Reason: Claims GLUE improvement of 3.2%, contains 'transformer' indirectly
+
+  ✅ TEMPLATE matched (score: 0.90)
+     The paper explicitly states improving GLUE by 3.2%, which is greater than the 1% threshold.
+  ⚠️  MISSED: keyword
+
+======================================================================
+SUMMARY
+======================================================================
+
+Tests run: 5
+Passed: 3/5 (60.0%)
+
+1. ✅ PASS: Attention Is All You Need
+   Expected: keyword, author
+   Triggered: keyword, author
+
+2. ✅ PASS: Scaling Laws for Neural Language Models
+   Expected: claim
+   Triggered: claim
+
+3. ❌ FAIL: BERT: Pre-training of Deep Bidirectional Transform
+   Expected: keyword
+   Triggered: keyword, template
+
+4. ✅ PASS: Language Models are Few-Shot Learners
+   Expected: author, claim
+   Triggered: claim, author
+
+5. ❌ FAIL: RoBERTa: A Robustly Optimized BERT Pretraining App
+   Expected: template, keyword
+   Triggered: template
+
+======================================================================
+CLEANUP
+======================================================================
+
+Deleted keyword rule: rule_e3fe03c53770
+Deleted claim rule: rule_82d87ce996dd
+Deleted relationship rule: rule_ee97dd9057d2
+Deleted author rule: rule_61c55fd0faf4
+Deleted template rule: rule_3945fcce4e48
+
+======================================================================
+PHASE 2.2 GO/NO-GO DECISION
+======================================================================
+
+✅ PASS: Keyword matching works
+✅ PASS: Claim matching works
+✅ PASS: Author matching works
+✅ PASS: Template matching works
+❌ FAIL: Overall accuracy ≥80%
+
+======================================================================
+❌ NO-GO: Phase 2.2 needs refinement
+======================================================================
