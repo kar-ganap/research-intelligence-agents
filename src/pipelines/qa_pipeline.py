@@ -8,13 +8,14 @@ Orchestrates question answering with citations:
 Phase 1 approach: Simple Python orchestration.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 import time
 import re
 
 from src.tools.retrieval import keyword_search
 from src.agents.qa.answer_agent import AnswerAgent
+from src.agents.qa.confidence_agent import ConfidenceAgent
 from src.storage.firestore_client import FirestoreClient
 
 logger = logging.getLogger(__name__)
@@ -27,16 +28,24 @@ class QAPipeline:
     Simple Python orchestration: Question → Retrieval → Answer
     """
 
-    def __init__(self, project_id: str = None):
+    def __init__(self, project_id: str = None, enable_confidence: bool = False):
         """
         Initialize the Q&A pipeline.
 
         Args:
             project_id: GCP project ID for Firestore
+            enable_confidence: Whether to score answer confidence (Phase 2.3 feature)
         """
         self.answer_agent = AnswerAgent()
         self.firestore_client = FirestoreClient(project_id=project_id)
-        logger.info("QAPipeline initialized")
+        self.enable_confidence = enable_confidence
+
+        if enable_confidence:
+            self.confidence_agent = ConfidenceAgent()
+            logger.info("QAPipeline initialized with confidence scoring")
+        else:
+            self.confidence_agent = None
+            logger.info("QAPipeline initialized (confidence scoring disabled)")
 
     def ask(self, question: str, limit: int = 5) -> Dict:
         """
@@ -105,15 +114,63 @@ class QAPipeline:
             # Extract citations from answer
             citations = self._extract_citations(answer)
 
+            # Step 3 (Optional): Calculate confidence score
+            confidence_result = None
+            if self.enable_confidence and self.confidence_agent:
+                logger.info("Step 3/3: Calculating confidence score")
+                step_start = time.time()
+
+                try:
+                    # Check for contradictions in relationships (if available)
+                    contradictions = self._find_contradictions(papers)
+
+                    confidence_result = self.confidence_agent.score_confidence(
+                        question=question,
+                        answer=answer,
+                        papers=papers,
+                        contradictions=contradictions
+                    )
+
+                    result["steps"]["confidence"] = {
+                        "success": True,
+                        "score": confidence_result['final_score'],
+                        "duration": time.time() - step_start
+                    }
+
+                    logger.info(f"Confidence score: {confidence_result['final_score']:.2f}")
+
+                except Exception as e:
+                    logger.warning(f"Confidence scoring failed (non-blocking): {e}")
+                    result["steps"]["confidence"] = {
+                        "success": False,
+                        "error": str(e),
+                        "duration": time.time() - step_start
+                    }
+
             # Success!
             result["success"] = True
             result["answer"] = answer
             result["citations"] = citations
             result["duration"] = time.time() - start_time
 
+            # Add confidence data if enabled
+            if confidence_result:
+                result["confidence"] = {
+                    "score": confidence_result['final_score'],
+                    "breakdown": {
+                        "evidence_strength": confidence_result['evidence_strength'],
+                        "consistency": confidence_result['consistency'],
+                        "coverage": confidence_result['coverage'],
+                        "source_quality": confidence_result['source_quality']
+                    },
+                    "reasoning": confidence_result['reasoning'],
+                    "warning": confidence_result.get('warning')
+                }
+
             logger.info(
                 f"✅ Question answered ({result['duration']:.2f}s, "
-                f"{len(citations)} citations)"
+                f"{len(citations)} citations"
+                f"{', confidence: ' + str(confidence_result['final_score']) if confidence_result else ''})"
             )
 
             return result
@@ -144,6 +201,40 @@ class QAPipeline:
                 unique_citations.append(citation)
 
         return unique_citations
+
+    def _find_contradictions(self, papers: List[Dict]) -> List[Dict]:
+        """
+        Find contradictions between papers using Phase 2.1 relationship data.
+
+        Args:
+            papers: List of retrieved papers
+
+        Returns:
+            List of contradictions (relationships with type='contradicts')
+        """
+        contradictions = []
+
+        try:
+            # Get paper IDs
+            paper_ids = [p.get('paper_id') for p in papers if p.get('paper_id')]
+
+            if not paper_ids:
+                return []
+
+            # Check for contradicting relationships between these papers
+            for paper_id in paper_ids:
+                relationships = self.firestore_client.get_relationships_for_paper(paper_id)
+
+                for rel in relationships:
+                    # Check if this is a contradiction and involves papers in our set
+                    if (rel.get('relationship_type') == 'contradicts' and
+                        rel.get('target_paper_id') in paper_ids):
+                        contradictions.append(rel)
+
+        except Exception as e:
+            logger.warning(f"Could not check for contradictions: {e}")
+
+        return contradictions
 
     def batch_ask(self, questions: List[str], limit: int = 5) -> Dict:
         """
