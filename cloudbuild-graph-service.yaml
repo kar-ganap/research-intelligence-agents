@@ -1,0 +1,14 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'src/services/graph_service/Dockerfile'
+      - '-t'
+      - 'gcr.io/research-intel-agents/graph-service:latest'
+      - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/research-intel-agents/graph-service:latest'
+timeout: 600s

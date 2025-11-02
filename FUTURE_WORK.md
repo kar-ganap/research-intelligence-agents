@@ -65,7 +65,88 @@ This document tracks features and improvements that have been identified but def
 
 ---
 
-### 3. Advanced Watch Rule Templates
+### 3. Trust Verification (Phase 2.4)
+**Priority:** Medium
+**Effort:** Medium (1-2 days)
+**Blocked by:** Full paper text storage (#2)
+**Status:** Deferred from Phase 2
+
+**Context:**
+- Phase 2.4 was planned but skipped in favor of moving to Phase 3
+- ConfidenceAgent (Phase 2.3) provides overall answer quality assessment
+- Trust Verification would add claim-level verification against source papers
+
+**What Trust Verification Does:**
+Verify that cited claims are actually supported by the cited papers.
+
+**Example:**
+- Answer says: "Transformer achieves 28.4 BLEU on WMT 2014 [Attention Is All You Need]"
+- VerifierAgent would:
+  1. Extract claim: "28.4 BLEU on WMT 2014"
+  2. Read cited paper: "Attention Is All You Need"
+  3. Search for this specific claim in the paper
+  4. Return verification status:
+     - ✅ VERIFIED: Found exact match with page number and quote
+     - ⚠️ PARTIAL: Found similar but not exact claim
+     - ❌ UNVERIFIED: Could not find this claim
+     - 🚫 CONTRADICTS: Paper says something different
+
+**Value Proposition:**
+- **Hallucination detection**: Catch when AI makes up claims
+- **Citation accuracy**: Ensure citations are correctly attributed
+- **Academic rigor**: Provide audit trail with exact quotes and page numbers
+- **Trust building**: Show users proof of claims, not just confidence scores
+
+**Difference from ConfidenceAgent:**
+| Feature | ConfidenceAgent (Built) | VerifierAgent (Future) |
+|---------|----------------------|----------------------|
+| What it checks | "Do we have good evidence?" | "Is the citation accurate?" |
+| Evaluates | Overall answer quality | Individual claim verification |
+| Can detect | Weak evidence, contradictions | Misattributed claims, hallucinations |
+| Granularity | Answer-level | Claim-level |
+
+**Implementation Plan:**
+1. **VerifierAgent** (`src/agents/qa/verifier_agent.py`):
+   ```python
+   class VerifierAgent(BaseResearchAgent):
+       def verify_claim(self, claim: str, citation: str, paper_text: str) -> Dict:
+           """
+           Verify claim against cited paper.
+
+           Returns:
+               {
+                   'status': 'VERIFIED' | 'PARTIAL' | 'UNVERIFIED' | 'CONTRADICTS',
+                   'evidence': str,  # Exact quote if found
+                   'page_number': int,
+                   'confidence': float
+               }
+           """
+   ```
+
+2. **Claim Extraction**: Parse answer to extract individual claims with citations
+3. **Evidence Tracing**: For each claim, read full paper and search for supporting text
+4. **Output Enhancement**: Add verification data to Q&A pipeline results
+5. **UI Display**: Show verification status alongside answers
+
+**Prerequisites:**
+- Full paper text storage (#2) - needed to search papers for claims
+- Chunking strategy for efficient claim search
+- May need OCR or better PDF parsing for tables/figures
+
+**Why Deferred:**
+1. ConfidenceAgent already provides strong trust signals
+2. Requires full text storage (not yet implemented)
+3. Computationally expensive (read full papers for every claim)
+4. Better ROI to focus on Phase 3 (UI, deployment) first
+5. Can add later when implementing semantic search + full text storage
+
+**Related:**
+- See conversation: "tell me more about trust verification?"
+- Decision: Skip 2.4, move to Phase 3, add verification later with full text storage
+
+---
+
+### 4. Advanced Watch Rule Templates
 **Priority:** Low
 **Effort:** Small (ongoing)
 
