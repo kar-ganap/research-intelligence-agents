@@ -15,10 +15,14 @@ import os
 import sys
 import logging
 import json
+import threading
 from typing import Dict
 from concurrent import futures
 
+from flask import Flask, jsonify
 from google.cloud import pubsub_v1
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, To, Content
 
 # Configure logging
 logging.basicConfig(
@@ -31,10 +35,27 @@ logger = logging.getLogger(__name__)
 PROJECT_ID = os.environ.get('GOOGLE_CLOUD_PROJECT')
 SUBSCRIPTION_ID = os.environ.get('PUBSUB_SUBSCRIPTION', 'arxiv-matches-sub')
 MAX_MESSAGES = int(os.environ.get('MAX_MESSAGES', '10'))
+PORT = int(os.environ.get('PORT', '8080'))
 
 # Email configuration (using environment variables for now)
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@research-intelligence.app')
+
+# Flask app for health checks
+app = Flask(__name__)
+worker_status = {"status": "starting", "messages_processed": 0}
+
+
+@app.route('/')
+def health_check():
+    """Health check endpoint for Cloud Run."""
+    return jsonify(worker_status), 200
+
+
+@app.route('/health')
+def health():
+    """Health check endpoint for Cloud Run."""
+    return jsonify(worker_status), 200
 
 
 def send_email_notification(alert_data: Dict) -> bool:
@@ -66,30 +87,86 @@ def send_email_notification(alert_data: Dict) -> bool:
 
         logger.info(f"Sending email to {user_email}: {paper_title[:50]}...")
 
-        # For MVP: Log instead of actually sending
-        # In production, use SendGrid API
-        if SENDGRID_API_KEY:
-            # TODO: Implement SendGrid email sending
-            logger.info("SendGrid integration not implemented yet")
-            pass
+        # Prepare email content
+        subject = "New paper matches your research interests"
 
-        # For now, just log the alert
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #2563eb;">New Research Paper Alert</h2>
+            <p>Hi {user_name},</p>
+            <p>A new paper has been published that matches your research interests:</p>
+
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #1f2937;">{paper_title}</h3>
+                <p><strong>Authors:</strong> {authors}</p>
+                <p><strong>arXiv ID:</strong> {arxiv_id}</p>
+                <p><strong>Why this matches:</strong> {match_reason}</p>
+            </div>
+
+            <p>
+                <a href="https://arxiv.org/abs/{arxiv_id}"
+                   style="background-color: #2563eb; color: white; padding: 10px 20px;
+                          text-decoration: none; border-radius: 5px; display: inline-block;">
+                    View Paper on arXiv
+                </a>
+            </p>
+
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 12px;">
+                You're receiving this because you subscribed to research alerts.
+                To unsubscribe, please contact support.
+            </p>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+Hi {user_name},
+
+A new paper has been published that matches your research interests:
+
+Title: {paper_title}
+Authors: {authors}
+arXiv ID: {arxiv_id}
+
+Why this matches: {match_reason}
+
+View on arXiv: https://arxiv.org/abs/{arxiv_id}
+
+---
+You're receiving this because you subscribed to research alerts.
+        """
+
+        if SENDGRID_API_KEY:
+            try:
+                # Send via SendGrid
+                message = Mail(
+                    from_email=Email(FROM_EMAIL, "Research Intelligence"),
+                    to_emails=To(user_email),
+                    subject=subject,
+                    plain_text_content=Content("text/plain", text_content),
+                    html_content=Content("text/html", html_content)
+                )
+
+                sg = SendGridAPIClient(SENDGRID_API_KEY)
+                response = sg.send(message)
+
+                logger.info(f"✅ Email sent successfully to {user_email}")
+                logger.info(f"SendGrid response status: {response.status_code}")
+                return True
+
+            except Exception as e:
+                logger.error(f"Failed to send email via SendGrid: {str(e)}")
+                # Fall through to logging
+
+        # Fallback: Log the email (for testing or if SendGrid not configured)
         logger.info("=" * 70)
-        logger.info(f"📧 EMAIL NOTIFICATION")
+        logger.info(f"📧 EMAIL NOTIFICATION (Log Mode)")
         logger.info(f"To: {user_email}")
-        logger.info(f"Subject: New paper matches your research interests")
+        logger.info(f"Subject: {subject}")
         logger.info("-" * 70)
-        logger.info(f"Hi {user_name},")
-        logger.info(f"")
-        logger.info(f"A new paper has been published that matches your interests:")
-        logger.info(f"")
-        logger.info(f"  Title: {paper_title}")
-        logger.info(f"  Authors: {authors}")
-        logger.info(f"  arXiv ID: {arxiv_id}")
-        logger.info(f"")
-        logger.info(f"  Why this matches: {match_reason}")
-        logger.info(f"")
-        logger.info(f"View on arXiv: https://arxiv.org/abs/{arxiv_id}")
+        logger.info(text_content)
         logger.info("=" * 70)
 
         return True
@@ -119,6 +196,7 @@ def process_message(message: pubsub_v1.subscriber.message.Message) -> None:
         if success:
             # Acknowledge message (remove from queue)
             message.ack()
+            worker_status["messages_processed"] += 1
             logger.info("✅ Alert processed and acknowledged")
         else:
             # Nack message (requeue for retry)
@@ -130,13 +208,8 @@ def process_message(message: pubsub_v1.subscriber.message.Message) -> None:
         message.nack()
 
 
-def main():
-    """
-    Main worker loop.
-
-    Continuously pulls messages from Pub/Sub and processes them.
-    Runs until interrupted or error occurs.
-    """
+def start_pubsub_worker():
+    """Start the Pub/Sub worker in a background thread."""
     logger.info("=" * 70)
     logger.info("Alert Worker Started")
     logger.info("=" * 70)
@@ -146,12 +219,14 @@ def main():
     logger.info("=" * 70)
 
     try:
+        worker_status["status"] = "running"
+
         # Create subscriber client
         subscriber = pubsub_v1.SubscriberClient()
         subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
 
         logger.info(f"Subscribing to: {subscription_path}")
-        logger.info("Worker is now listening for messages... (Ctrl+C to stop)")
+        logger.info("Worker is now listening for messages...")
 
         # Create streaming pull
         streaming_pull_future = subscriber.subscribe(
@@ -163,27 +238,36 @@ def main():
         )
 
         # Keep worker running
-        try:
-            streaming_pull_future.result()
-        except KeyboardInterrupt:
-            logger.info("Received interrupt, shutting down...")
-            streaming_pull_future.cancel()
-            streaming_pull_future.result()
+        streaming_pull_future.result()
 
     except Exception as e:
         logger.error(f"Worker failed: {str(e)}", exc_info=True)
-        return 1
+        worker_status["status"] = "error"
+        worker_status["error"] = str(e)
 
     logger.info("=" * 70)
     logger.info("Alert Worker Stopped")
     logger.info("=" * 70)
-    return 0
+
+
+def main():
+    """
+    Main function.
+
+    Starts Pub/Sub worker in background thread and Flask server in foreground.
+    """
+    # Start Pub/Sub worker in background thread
+    worker_thread = threading.Thread(target=start_pubsub_worker, daemon=True)
+    worker_thread.start()
+
+    # Start Flask server for health checks
+    logger.info(f"Starting health check server on port {PORT}...")
+    app.run(host='0.0.0.0', port=PORT)
 
 
 if __name__ == '__main__':
     try:
-        exit_code = main()
-        sys.exit(exit_code)
+        main()
     except KeyboardInterrupt:
         logger.info("\nWorker interrupted by user")
         sys.exit(130)
