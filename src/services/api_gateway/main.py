@@ -58,6 +58,9 @@ def index():
             'papers': 'GET /api/papers',
             'graph': 'GET /api/graph',
             'relationships': 'GET /api/relationships',
+            'watch_rules': 'GET /api/watch-rules, POST /api/watch-rules',
+            'alerts': 'GET /api/alerts',
+            'upload': 'POST /api/upload',
             'health': 'GET /health'
         },
         'services': {
@@ -187,6 +190,124 @@ def relationships():
 
     except requests.exceptions.RequestException as e:
         logger.error(f"[API Gateway] Error calling Graph Service: {str(e)}")
+        return jsonify({'error': f'Service unavailable: {str(e)}'}), 503
+    except Exception as e:
+        logger.error(f"[API Gateway] Error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/watch-rules', methods=['GET', 'POST'])
+def watch_rules():
+    """
+    Watch rules endpoint - direct Firestore access
+    """
+    try:
+        from google.cloud import firestore
+
+        db = firestore.Client()
+
+        if request.method == 'GET':
+            logger.info("[API Gateway] List watch rules request")
+
+            # Get all watch rules
+            rules_ref = db.collection('watch_rules')
+            rules = []
+
+            for doc in rules_ref.stream():
+                rule_data = doc.to_dict()
+                rule_data['id'] = doc.id
+                rules.append(rule_data)
+
+            logger.info(f"[API Gateway] Found {len(rules)} watch rules")
+            return jsonify({'rules': rules, 'count': len(rules)}), 200
+
+        elif request.method == 'POST':
+            logger.info("[API Gateway] Create watch rule request")
+
+            data = request.json
+            if not data:
+                return jsonify({'error': 'Missing request body'}), 400
+
+            # Validate required fields
+            if 'rule_type' not in data or 'user_email' not in data:
+                return jsonify({'error': 'Missing required fields: rule_type, user_email'}), 400
+
+            # Add created_at timestamp
+            from datetime import datetime
+            data['created_at'] = datetime.utcnow().isoformat() + 'Z'
+
+            # Create the rule
+            rule_ref = db.collection('watch_rules').document()
+            rule_ref.set(data)
+
+            logger.info(f"[API Gateway] Created watch rule: {rule_ref.id}")
+            return jsonify({'rule_id': rule_ref.id, 'success': True}), 201
+
+    except Exception as e:
+        logger.error(f"[API Gateway] Error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/alerts', methods=['GET'])
+def alerts():
+    """
+    Alerts endpoint - direct Firestore access
+    """
+    try:
+        from google.cloud import firestore
+
+        logger.info("[API Gateway] List alerts request")
+
+        db = firestore.Client()
+        alerts_ref = db.collection('alerts')
+        alerts_list = []
+
+        for doc in alerts_ref.stream():
+            alert_data = doc.to_dict()
+            alert_data['id'] = doc.id
+            alerts_list.append(alert_data)
+
+        logger.info(f"[API Gateway] Found {len(alerts_list)} alerts")
+        return jsonify({'alerts': alerts_list, 'count': len(alerts_list)}), 200
+
+    except Exception as e:
+        logger.error(f"[API Gateway] Error: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/upload', methods=['POST'])
+def upload():
+    """
+    Upload PDF endpoint - routes to Orchestrator
+    """
+    try:
+        logger.info("[API Gateway] PDF upload request")
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        if not file.filename.endswith('.pdf'):
+            return jsonify({'error': 'Only PDF files are supported'}), 400
+
+        # Forward to Orchestrator
+        files = {'file': (file.filename, file.stream, file.content_type)}
+        response = requests.post(
+            f"{ORCHESTRATOR_URL}/upload",
+            files=files,
+            timeout=REQUEST_TIMEOUT
+        )
+        response.raise_for_status()
+
+        result = response.json()
+        logger.info(f"[API Gateway] Upload response: success")
+        return jsonify(result), 200
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"[API Gateway] Error calling Orchestrator: {str(e)}")
         return jsonify({'error': f'Service unavailable: {str(e)}'}), 503
     except Exception as e:
         logger.error(f"[API Gateway] Error: {str(e)}", exc_info=True)
