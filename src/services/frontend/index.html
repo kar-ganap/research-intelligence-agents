@@ -210,6 +210,142 @@
             font-size: 14px;
             color: #5f6368;
         }
+
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e8eaed;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 15px;
+            color: #5f6368;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #1a73e8;
+            border-bottom-color: #1a73e8;
+            font-weight: 600;
+        }
+
+        .tab-button:hover {
+            color: #1a73e8;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px dashed #e8eaed;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e8eaed;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .rule-item, .alert-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .rule-keywords {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .keyword-tag {
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .alert-new {
+            border-left: 4px solid #1a73e8;
+        }
+
+        .graph-controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .graph-controls select {
+            padding: 8px 12px;
+            border: 1px solid #e8eaed;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-secondary {
+            background: #5f6368;
+        }
+
+        .btn-secondary:hover {
+            background: #3c4043;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -238,17 +374,106 @@
                 </div>
             </div>
 
-            <!-- Papers Section -->
+            <!-- Papers Section with Tabs -->
             <div class="card">
                 <h2>📚 Research Corpus</h2>
-                <div id="papersList" class="papers-list">
-                    <p style="color: #5f6368;">Loading papers...</p>
+
+                <div class="tab-nav">
+                    <button class="tab-button active" onclick="switchTab('papers-list-tab')">Papers</button>
+                    <button class="tab-button" onclick="switchTab('papers-upload-tab')">Upload</button>
+                    <button class="tab-button" onclick="switchTab('alerts-tab')">Alerts</button>
+                </div>
+
+                <!-- Papers List Tab -->
+                <div id="papers-list-tab" class="tab-content active">
+                    <div id="papersList" class="papers-list">
+                        <p style="color: #5f6368;">Loading papers...</p>
+                    </div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div id="papers-upload-tab" class="tab-content">
+                    <div class="form-group">
+                        <label class="form-label">Upload arXiv PDF</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="pdfFile" accept=".pdf" onchange="handleFileSelect(event)">
+                            <label for="pdfFile" class="file-input-label">
+                                <div>📄 Drop PDF here or click to browse</div>
+                                <div style="font-size: 12px; color: #5f6368; margin-top: 5px;">Supports arXiv research papers in PDF format</div>
+                            </label>
+                        </div>
+                        <div id="uploadStatus" style="margin-top: 10px;"></div>
+                    </div>
+                    <button class="btn" onclick="uploadPaper()" id="uploadBtn" disabled>Upload & Process</button>
+                </div>
+
+                <!-- Alerts Tab -->
+                <div id="alerts-tab" class="tab-content">
+                    <div id="alertsList">
+                        <p style="color: #5f6368;">Loading alerts...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Watch Rules Section -->
+            <div class="card">
+                <h2>🔔 Watch Rules</h2>
+
+                <div class="tab-nav">
+                    <button class="tab-button active" onclick="switchTab('rules-list-tab')">My Rules</button>
+                    <button class="tab-button" onclick="switchTab('rules-create-tab')">Create Rule</button>
+                </div>
+
+                <!-- Rules List Tab -->
+                <div id="rules-list-tab" class="tab-content active">
+                    <div id="rulesList" style="max-height: 400px; overflow-y: auto;">
+                        <p style="color: #5f6368;">Loading watch rules...</p>
+                    </div>
+                </div>
+
+                <!-- Create Rule Tab -->
+                <div id="rules-create-tab" class="tab-content">
+                    <div class="form-group">
+                        <label class="form-label">Rule Type</label>
+                        <select id="ruleType" class="form-input" onchange="updateRuleForm()">
+                            <option value="keyword">Keyword Matching</option>
+                            <option value="author">Author Tracking</option>
+                            <option value="claim">Natural Language Claim</option>
+                        </select>
+                    </div>
+
+                    <div id="ruleFormFields">
+                        <!-- Dynamic fields based on rule type -->
+                        <div class="form-group">
+                            <label class="form-label">Keywords (comma-separated)</label>
+                            <input type="text" id="ruleKeywords" class="form-input" placeholder="e.g., transformer, attention, neural">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Email</label>
+                        <input type="email" id="ruleEmail" class="form-input" placeholder="your@email.com">
+                    </div>
+
+                    <button class="btn" onclick="createWatchRule()" id="createRuleBtn">Create Alert Rule</button>
                 </div>
             </div>
 
             <!-- Knowledge Graph Section -->
             <div class="card full-width">
                 <h2>🕸️ Knowledge Graph</h2>
+
+                <div class="graph-controls">
+                    <select id="relationshipFilter" onchange="filterGraph()">
+                        <option value="all">All Relationships</option>
+                        <option value="supports">Supports Only</option>
+                        <option value="extends">Extends Only</option>
+                        <option value="contradicts">Contradicts Only</option>
+                    </select>
+                    <button class="btn btn-small" onclick="resetGraphView()">Reset View</button>
+                    <button class="btn btn-small btn-secondary" onclick="togglePhysics()">Toggle Physics</button>
+                </div>
+
                 <div id="graph"></div>
             </div>
         </div>
