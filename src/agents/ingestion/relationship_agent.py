@@ -14,7 +14,7 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 from src.agents.base import BaseResearchAgent
-from src.utils.config import APP_NAME, DEFAULT_USER_ID
+from src.utils.config import config, APP_NAME, DEFAULT_USER_ID
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,9 @@ class RelationshipAgent(BaseResearchAgent):
     - extends: Builds upon previous work
     """
 
-    def __init__(self, model: str = "gemini-2.0-flash-exp"):
+    def __init__(self, model: str = None):
+        if model is None:
+            model = config.agent.default_model
         super().__init__(name="RelationshipAgent", model=model)
 
     def _create_agent(self) -> LlmAgent:

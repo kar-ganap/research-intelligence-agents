@@ -14,7 +14,7 @@ import uuid
 from typing import Dict
 from google.adk.agents import LlmAgent
 from src.agents.base import BaseResearchAgent
-from src.utils.config import APP_NAME, DEFAULT_USER_ID
+from src.utils.config import APP_NAME, DEFAULT_USER_ID, config
 
 
 class EntityAgent(BaseResearchAgent):
@@ -25,7 +25,9 @@ class EntityAgent(BaseResearchAgent):
     Output: Structured JSON with extracted entities
     """
 
-    def __init__(self, model: str = "gemini-2.0-flash-exp"):
+    def __init__(self, model: str = None):
+        if model is None:
+            model = config.agent.default_model
         super().__init__(name="EntityAgent", model=model)
 
     def _create_agent(self) -> LlmAgent:
