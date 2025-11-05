@@ -269,6 +269,322 @@ Verify that cited claims are actually supported by the cited papers.
 
 ---
 
+## Phase 4+ Evidence-First Enhancements
+
+*Inspired by "Reimagining Knowledge Systems in Equity Research — Evidence-First AI" white paper*
+
+### 9. Table & Chart Extraction (Multi-Modal Understanding)
+**Priority:** High
+**Effort:** Medium (2-3 days)
+**Inspiration:** White paper Section II: "Tables, charts, and text are interdependent signals"
+**Previous Work:** See `docs/planning/MULTIMODAL_CONTENT_STRATEGY.md` - deferred from Phase 2
+
+**Current Gap:**
+- Paper ingestion only extracts text from PDFs
+- Critical evidence in tables (experimental results, benchmarks, performance metrics) is ignored
+- Academic papers encode key findings in figures/tables
+- **Note**: We attempted table extraction earlier with `pdfplumber` but deferred to revisit later
+
+**Example of Missing Data:**
+- "GPT-3 achieves 71.8% accuracy on LAMBADA" → Table in paper
+- Transformer benchmarks (WMT 2014 BLEU scores) → Table 2
+- Ablation study results → Often in tables
+
+**Implementation:**
+1. Add table extraction libraries: `camelot-py` (for tables) or `table-transformer`
+2. Store extracted tables in Firestore as structured JSON
+3. Link table cells to paper claims in relationship graph
+4. Enhance AnswerAgent to reason over tabular data
+5. Visual extraction with multimodal models (Gemini vision API for charts)
+
+**Files to Modify:**
+- `src/agents/ingestion/paper_parser.py` - Add table extraction
+- `src/storage/firestore_client.py` - Add `tables` field to schema
+- `src/agents/qa/answer_agent.py` - Reason over structured data
+
+**Value:**
+- Complete knowledge graph with quantitative evidence
+- Answer questions like "Which model performs best on X benchmark?"
+- More accurate relationship detection
+
+---
+
+### 10. Enhanced Citations with Exact Quotes & Page Numbers
+**Priority:** Medium
+**Effort:** Small (1 day)
+**Inspiration:** White paper Section II: "Every assertion must trace to a primary source, preserving quote, context, and location"
+
+**Current State:**
+- AnswerAgent returns citations as `[Paper Title]`
+- No preservation of exact quotes or page numbers
+- Cannot verify claim-to-source mapping
+
+**Enhancement:**
+```python
+# Current citation format
+"Transformers use self-attention [Attention Is All You Need]"
+
+# Enhanced citation format
+{
+    "claim": "Transformers use self-attention",
+    "evidence": {
+        "paper_id": "1706.03762",
+        "title": "Attention Is All You Need",
+        "quote": "The Transformer architecture uses multi-head self-attention...",
+        "page": 3,
+        "section": "3.2 Attention",
+        "context": "Preceding/following sentences for verification"
+    },
+    "confidence": 0.95
+}
+```
+
+**Implementation:**
+1. Update `AnswerAgent` to preserve exact quotes from source papers
+2. Add page number tracking during PDF ingestion
+3. Structure answers as claim-evidence pairs (not free-form text)
+4. Store citation provenance in answers collection
+
+**Value:**
+- Audit trail for every claim
+- Enables future Trust Verification (Phase 2.4)
+- Addresses white paper's "accountability friction"
+
+---
+
+### 11. Claim-Level Confidence Scoring
+**Priority:** Medium
+**Effort:** Medium (2 days)
+**Inspiration:** White paper concept: "Unit of meaning is the sourced fact" (not the sentence)
+
+**Current State:**
+- ConfidenceAgent scores entire answer (answer-level)
+- Cannot identify which specific claims are weak vs strong
+
+**Enhancement:**
+Score confidence per claim, not per answer.
+
+**Example:**
+```python
+{
+    "answer": {
+        "claims": [
+            {
+                "claim": "Transformers outperform RNNs on WMT",
+                "confidence": 0.95,  # High - directly from paper table
+                "evidence_strength": "strong",
+                "citations": ["Attention Is All You Need p.8 Table 2"]
+            },
+            {
+                "claim": "Transformers are more efficient to train",
+                "confidence": 0.70,  # Medium - inferred from multiple sources
+                "evidence_strength": "moderate",
+                "citations": ["Paper A", "Paper B"]
+            }
+        ],
+        "overall_confidence": 0.82  # Weighted average
+    }
+}
+```
+
+**Implementation:**
+1. Parse AnswerAgent output into discrete claims
+2. For each claim, run confidence scoring independently
+3. Aggregate claim-level scores for overall answer confidence
+4. Display confidence badges per claim in UI
+
+**Value:**
+- Users know which parts of answer to trust
+- Aligns with white paper's "provenance reasoning" philosophy
+- Enables granular verification
+
+---
+
+### 12. Authority-Weighted Reasoning (Source Quality Scoring)
+**Priority:** Medium
+**Effort:** Medium (1-2 days)
+**Inspiration:** White paper Section III.4: "10-K filings → Transcripts → Analyst reports → News"
+
+**Current State:**
+- All papers treated with equal authority
+- arXiv preprint has same weight as peer-reviewed JMLR paper
+
+**Enhancement:**
+Implement source authority hierarchy for academic research:
+
+```python
+def calculate_source_authority(paper: Dict) -> float:
+    """Calculate authority weight (0.0-1.0) for a paper."""
+    score = 0.5  # Base score
+
+    # Venue tier (top conferences/journals boost authority)
+    if paper.get('venue') in ['NeurIPS', 'ICML', 'ICLR', 'Nature', 'Science']:
+        score += 0.3
+    elif paper.get('is_peer_reviewed'):
+        score += 0.2
+
+    # Citation count (diminishing returns)
+    citation_count = paper.get('citation_count', 0)
+    score += min(0.2, citation_count / 100)
+
+    # Recency penalty (papers >5 years old may be outdated)
+    age_years = (datetime.now() - paper['published_date']).days / 365
+    if age_years > 5:
+        score -= 0.1
+
+    return max(0.1, min(1.0, score))  # Clamp to [0.1, 1.0]
+```
+
+**Use Cases:**
+1. **ConfidenceAgent**: Weight `source_quality` by authority scores
+2. **Relationship Detection**: Higher-authority papers win contradictions
+3. **Answer Ranking**: Prioritize citations from top-tier venues
+
+**Implementation:**
+1. Add `authority_score` field to papers collection
+2. Calculate during ingestion (EntityAgent extracts venue info)
+3. Use in ConfidenceAgent's `source_quality` calculation
+4. Display authority indicators in UI (e.g., "peer-reviewed", "highly cited")
+
+**Value:**
+- Aligns with white paper's authority hierarchy principle
+- Improves answer quality by trusting better sources
+- Helps users assess credibility
+
+---
+
+### 13. Temporal Intelligence: Tracking Supersession
+**Priority:** Low
+**Effort:** Small-Medium (1-2 days)
+**Inspiration:** White paper Section III.3: "What is current, historical, or superseded"
+
+**Current State:**
+- Papers have `published_date` but no version tracking
+- No mechanism to mark claims as "updated" or "superseded"
+- Cannot answer "What's the latest benchmark on X?"
+
+**Enhancement:**
+Add `supersedes` relationship type to track when newer papers update older findings.
+
+**New Relationship Type:**
+```python
+relationship_types = ['supports', 'contradicts', 'extends', 'supersedes', 'none']
+```
+
+**Example:**
+```json
+{
+    "source_paper_id": "gpt4-2023",
+    "target_paper_id": "gpt3-2020",
+    "relationship_type": "supersedes",
+    "confidence": 0.90,
+    "description": "GPT-4 updates GPT-3 with multimodal capabilities and improved reasoning"
+}
+```
+
+**Implementation:**
+1. Update `RelationshipAgent` to detect supersession
+2. Prompt: "Does this paper provide updated results/methodology for an older work?"
+3. In Q&A, prioritize non-superseded papers
+4. UI: Show "Updated by [Paper X]" tags on older papers
+
+**Value:**
+- Prevents citing outdated benchmarks
+- Helps users find the most current research
+- Implements white paper's temporal intelligence primitive
+
+---
+
+### 14. User Interaction Tracking (Research Memory)
+**Priority:** Medium
+**Effort:** Medium (2-3 days)
+**Inspiration:** White paper Section III.1: "Remembers everything a firm has read, concluded, and superseded"
+
+**Current Gap:**
+- System doesn't track what users have read or queried
+- No "derived insights" layer capturing user conclusions
+- Research context resets every session
+
+**Enhancement:**
+Build persistent user research memory:
+
+**New Firestore Collections:**
+```python
+# user_activity collection
+{
+    "user_id": "researcher_123",
+    "timestamp": "2025-11-04T...",
+    "action": "read_paper",  # or "asked_question", "bookmarked", "annotated"
+    "paper_id": "1706.03762",
+    "context": {
+        "query": "How do Transformers work?",
+        "session_id": "abc123"
+    }
+}
+
+# user_insights collection
+{
+    "user_id": "researcher_123",
+    "timestamp": "2025-11-04T...",
+    "insight": "Transformers use multi-head attention for parallel computation",
+    "derived_from": ["paper1", "paper2"],  # Source papers
+    "confidence": 0.85,
+    "tags": ["transformers", "attention", "architecture"]
+}
+```
+
+**Features:**
+1. Track read papers and queries per user
+2. Capture user annotations/bookmarks
+3. Suggest papers based on reading history
+4. Build personalized knowledge graph per researcher
+5. "Continue research" feature to resume context
+
+**Value:**
+- Addresses white paper's "insight decay" problem
+- Research compounds rather than dissipates
+- Personalized recommendations
+
+---
+
+### 15. Epistemic Status Tracking
+**Priority:** Low
+**Effort:** Small (1 day)
+**Inspiration:** Academic research reality: multiple valid interpretations coexist
+
+**Current Gap:**
+- Binary truth assumption (claim is either supported or not)
+- Doesn't track contested/emerging claims
+
+**Enhancement:**
+Track epistemic status of claims in knowledge graph:
+
+```python
+epistemic_status = [
+    'consensus',      # Widely accepted (e.g., "Transformers use attention")
+    'contested',      # Conflicting evidence (e.g., "LLMs are sample-efficient")
+    'emerging',       # Recent, not yet validated
+    'deprecated'      # Superseded by newer findings
+]
+```
+
+**Implementation:**
+1. Add `epistemic_status` field to relationships
+2. Infer status from relationship patterns:
+   - Many "supports" → `consensus`
+   - Mix of "supports" and "contradicts" → `contested`
+   - Recent papers with few citations → `emerging`
+   - Paper with "supersedes" relationship → `deprecated`
+3. Display status badges in UI
+4. ConfidenceAgent considers status when scoring
+
+**Value:**
+- More nuanced than authority hierarchy
+- Helps users navigate controversial topics
+- Reflects reality of academic discourse
+
+---
+
 ## Decision Log
 
 ### Decisions Made During Phase 2.3

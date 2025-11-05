@@ -1,7 +1,5 @@
-// Configuration - API Gateway URL
-const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080'
-    : 'https://api-gateway-338657477881.us-central1.run.app';
+// Configuration loaded from config.js (auto-generated during deployment)
+// API_BASE_URL is defined in config.js which loads before this script
 
 // Global network instance for graph
 let network = null;
@@ -16,6 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadWatchRules();
     loadAlerts();
 });
+
+/**
+ * Set a question in the input field (for example buttons)
+ */
+function setQuestion(question) {
+    document.getElementById('questionInput').value = question;
+}
 
 /**
  * Ask a question to the Q&A system
@@ -55,9 +60,18 @@ async function askQuestion() {
 
         const data = await response.json();
 
+        // Helper function to format answer text (convert markdown-like formatting to HTML)
+        function formatAnswer(text) {
+            return text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')  // **bold** -> <strong>bold</strong>
+                .replace(/\n\n/g, '</p><p>')  // Double newlines -> paragraph breaks
+                .replace(/\n/g, '<br>');  // Single newlines -> line breaks
+        }
+
         // Display answer
         let html = `<p><strong>Question:</strong> ${data.question}</p>`;
-        html += `<p style="margin-top: 15px;"><strong>Answer:</strong> ${data.answer}`;
+        html += `<div style="margin-top: 15px;"><strong>Answer:</strong></div>`;
+        html += `<div style="margin-top: 10px;"><p>${formatAnswer(data.answer)}</p>`;
 
         // Add confidence badge
         if (data.confidence) {
@@ -68,7 +82,7 @@ async function askQuestion() {
 
             html += `<span class="confidence-badge ${badgeClass}">Confidence: ${(score * 100).toFixed(0)}%</span>`;
         }
-        html += `</p>`;
+        html += `</div>`;
 
         answerContent.innerHTML = html;
 

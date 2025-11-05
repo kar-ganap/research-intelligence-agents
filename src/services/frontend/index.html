@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Research Intelligence Platform</title>
+    <!-- Load config FIRST to ensure API_BASE_URL is defined before app.js runs -->
+    <script type="text/javascript" src="config.js?v=20251105143152"></script>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         * {
@@ -346,6 +348,41 @@
             padding: 6px 12px;
             font-size: 14px;
         }
+
+        .example-queries {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e8eaed;
+        }
+
+        .example-queries-label {
+            font-size: 13px;
+            color: #5f6368;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .query-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn-example {
+            background: #f8f9fa;
+            color: #1a73e8;
+            border: 1px solid #e8eaed;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-example:hover {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+        }
     </style>
 </head>
 <body>
@@ -367,6 +404,17 @@
                     onkeypress="if(event.key==='Enter') askQuestion()"
                 >
                 <button class="btn" onclick="askQuestion()" id="askBtn">Ask</button>
+
+                <div class="example-queries">
+                    <div class="example-queries-label">📋 Example Graph Queries:</div>
+                    <div class="query-buttons">
+                        <button class="btn-example" onclick="setQuestion('What are the most cited papers?');">Most Cited Papers</button>
+                        <button class="btn-example" onclick="setQuestion('Which papers cite the Transformer paper?');">Papers Citing Transformers</button>
+                        <button class="btn-example" onclick="setQuestion('Find papers that contradict the Transformer architecture');">Contradictions</button>
+                        <button class="btn-example" onclick="setQuestion('Show papers by Ashish Vaswani');">Papers by Author</button>
+                        <button class="btn-example" onclick="setQuestion('Which papers extend the BERT model?');">Extensions of BERT</button>
+                    </div>
+                </div>
 
                 <div id="answerBox" class="answer-box">
                     <div id="answerContent"></div>

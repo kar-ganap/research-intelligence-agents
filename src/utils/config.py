@@ -62,7 +62,7 @@ def load_config() -> Config:
             credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
         ),
         agent=AgentConfig(
-            default_model=os.getenv('DEFAULT_MODEL', 'gemini-2.0-flash-exp'),
+            default_model=os.getenv('DEFAULT_MODEL', 'gemini-2.5-pro'),
             temperature=float(os.getenv('DEFAULT_TEMPERATURE', '0.3')),
             max_tokens=int(os.getenv('DEFAULT_MAX_TOKENS', '2048')),
             timeout=int(os.getenv('DEFAULT_TIMEOUT', '30'))

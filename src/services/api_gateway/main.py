@@ -18,6 +18,15 @@ from typing import Dict, Any
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# Import service discovery
+try:
+    from service_discovery import get_orchestrator_url, get_graph_service_url, get_api_gateway_url
+    SERVICE_DISCOVERY_ENABLED = True
+except ImportError:
+    SERVICE_DISCOVERY_ENABLED = False
+    logger = logging.getLogger(__name__)
+    logger.warning("Service discovery not available, using environment variables")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -29,9 +38,57 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-# Service URLs (from environment or defaults)
-ORCHESTRATOR_URL = os.environ.get('ORCHESTRATOR_URL', 'http://localhost:8081')
-GRAPH_SERVICE_URL = os.environ.get('GRAPH_SERVICE_URL', 'http://localhost:8082')
+# Service URLs - lazy loaded with service discovery fallback
+_orchestrator_url = None
+_graph_service_url = None
+
+def get_orchestrator() -> str:
+    """Get Orchestrator URL with caching and fallback."""
+    global _orchestrator_url
+    if _orchestrator_url:
+        return _orchestrator_url
+
+    # Try environment variable first
+    env_url = os.environ.get('ORCHESTRATOR_URL')
+    if env_url:
+        _orchestrator_url = env_url
+        return _orchestrator_url
+
+    # Try service discovery
+    if SERVICE_DISCOVERY_ENABLED:
+        try:
+            _orchestrator_url = get_orchestrator_url()
+            return _orchestrator_url
+        except Exception as e:
+            logger.error(f"Service discovery failed: {e}")
+
+    # Fallback to localhost
+    _orchestrator_url = 'http://localhost:8081'
+    return _orchestrator_url
+
+def get_graph_service() -> str:
+    """Get Graph Service URL with caching and fallback."""
+    global _graph_service_url
+    if _graph_service_url:
+        return _graph_service_url
+
+    # Try environment variable first
+    env_url = os.environ.get('GRAPH_SERVICE_URL')
+    if env_url:
+        _graph_service_url = env_url
+        return _graph_service_url
+
+    # Try service discovery
+    if SERVICE_DISCOVERY_ENABLED:
+        try:
+            _graph_service_url = get_graph_service_url()
+            return _graph_service_url
+        except Exception as e:
+            logger.error(f"Service discovery failed: {e}")
+
+    # Fallback to localhost
+    _graph_service_url = 'http://localhost:8082'
+    return _graph_service_url
 
 # Request timeout
 REQUEST_TIMEOUT = 300  # 5 minutes for LLM calls
@@ -64,8 +121,8 @@ def index():
             'health': 'GET /health'
         },
         'services': {
-            'orchestrator': ORCHESTRATOR_URL,
-            'graph_service': GRAPH_SERVICE_URL
+            'orchestrator': get_orchestrator(),
+            'graph_service': get_graph_service()
         }
     }), 200
 
@@ -97,7 +154,7 @@ def ask():
 
         # Forward to Orchestrator
         response = requests.post(
-            f"{ORCHESTRATOR_URL}/qa",
+            f"{get_orchestrator()}/qa",
             json=data,
             timeout=REQUEST_TIMEOUT
         )
@@ -125,7 +182,7 @@ def list_papers():
 
         # Forward to Orchestrator
         response = requests.get(
-            f"{ORCHESTRATOR_URL}/papers",
+            f"{get_orchestrator()}/papers",
             timeout=REQUEST_TIMEOUT
         )
         response.raise_for_status()
@@ -152,7 +209,7 @@ def graph():
 
         # Forward to Graph Service
         response = requests.get(
-            f"{GRAPH_SERVICE_URL}/graph",
+            f"{get_graph_service()}/graph",
             timeout=REQUEST_TIMEOUT
         )
         response.raise_for_status()
@@ -179,7 +236,7 @@ def relationships():
 
         # Forward to Graph Service
         response = requests.get(
-            f"{GRAPH_SERVICE_URL}/relationships",
+            f"{get_graph_service()}/relationships",
             timeout=REQUEST_TIMEOUT
         )
         response.raise_for_status()
@@ -296,7 +353,7 @@ def upload():
         # Forward to Orchestrator
         files = {'file': (file.filename, file.stream, file.content_type)}
         response = requests.post(
-            f"{ORCHESTRATOR_URL}/upload",
+            f"{get_orchestrator()}/upload",
             files=files,
             timeout=REQUEST_TIMEOUT
         )
@@ -317,6 +374,6 @@ def upload():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     logger.info(f"[API Gateway] Starting on port {port}")
-    logger.info(f"[API Gateway] Orchestrator URL: {ORCHESTRATOR_URL}")
-    logger.info(f"[API Gateway] Graph Service URL: {GRAPH_SERVICE_URL}")
+    logger.info(f"[API Gateway] Orchestrator URL: {get_orchestrator()}")
+    logger.info(f"[API Gateway] Graph Service URL: {get_graph_service()}")
     app.run(host='0.0.0.0', port=port, debug=False)
