@@ -383,6 +383,42 @@
             background: #e8f0fe;
             border-color: #1a73e8;
         }
+
+        .graph-legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e8eaed;
+        }
+
+        .legend-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #5f6368;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
     </style>
 </head>
 <body>
@@ -523,6 +559,20 @@
                 </div>
 
                 <div id="graph"></div>
+
+                <div class="graph-legend">
+                    <div class="legend-title">Category Legend:</div>
+                    <div class="legend-items">
+                        <span class="legend-item"><span class="legend-color" style="background: #FF6B6B;"></span> cs.AI</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #4ECDC4;"></span> cs.LG</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #45B7D1;"></span> cs.CL</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #FFA07A;"></span> cs.CV</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #98D8C8;"></span> cs.MA</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #F7DC6F;"></span> math.ST</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #BB8FCE;"></span> stat.ML</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #85C1E2;"></span> stat.CO</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

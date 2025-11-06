@@ -7,6 +7,29 @@ let graphData = null; // Store full graph data for filtering
 let selectedFile = null;
 let physicsEnabled = false;
 
+// Category color mapping
+const CATEGORY_COLORS = {
+    'cs.AI': '#FF6B6B',   // Red
+    'cs.LG': '#4ECDC4',   // Teal
+    'cs.CL': '#45B7D1',   // Blue
+    'cs.CV': '#FFA07A',   // Orange
+    'cs.MA': '#98D8C8',   // Mint
+    'math.ST': '#F7DC6F', // Yellow
+    'stat.ML': '#BB8FCE', // Purple
+    'stat.CO': '#85C1E2', // Sky blue
+    'default': '#95A5A6'  // Gray
+};
+
+/**
+ * Get color for a given arXiv category
+ */
+function getCategoryColor(category) {
+    if (!category) return CATEGORY_COLORS.default;
+    // Handle categories like "cs.LG" or just "cs.LG, cs.AI" (take first)
+    const primaryCat = category.split(',')[0].trim();
+    return CATEGORY_COLORS[primaryCat] || CATEGORY_COLORS.default;
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadPapers();
@@ -127,10 +150,29 @@ async function loadPapers() {
 
         let html = '';
         papers.forEach(paper => {
+            // Build arXiv links
+            const arxivId = paper.arxiv_id || paper.paper_id;
+            const arxivUrl = arxivId ? `https://arxiv.org/abs/${arxivId}` : null;
+            const pdfUrl = arxivId ? `https://arxiv.org/pdf/${arxivId}.pdf` : null;
+
+            // Get category badge
+            const category = paper.primary_category || (paper.categories && paper.categories[0]) || 'Unknown';
+            const categoryColor = getCategoryColor(category);
+
             html += `
                 <div class="paper-item">
-                    <div class="paper-title">${paper.title}</div>
+                    <div class="paper-title">
+                        ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="color: #1a73e8; text-decoration: none;">${paper.title}</a>` : paper.title}
+                        ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="margin-left: 8px; font-size: 12px; color: #5f6368;" title="View on arXiv">↗</a>` : ''}
+                        ${pdfUrl ? `<a href="${pdfUrl}" target="_blank" style="margin-left: 4px; font-size: 12px; color: #5f6368;" title="Download PDF">📥</a>` : ''}
+                    </div>
                     <div class="paper-authors">${paper.authors ? paper.authors.join(', ') : 'Unknown authors'}</div>
+                    <div style="margin-top: 4px;">
+                        <span style="display: inline-block; background: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            ${category}
+                        </span>
+                        ${paper.published ? `<span style="margin-left: 8px; font-size: 12px; color: #5f6368;">📅 ${new Date(paper.published).toLocaleDateString()}</span>` : ''}
+                    </div>
                 </div>
             `;
         });
@@ -159,6 +201,31 @@ async function loadGraph() {
         const data = await response.json();
         graphData = data; // Store for filtering
 
+        // Apply category-based colors to nodes
+        if (data.nodes) {
+            data.nodes = data.nodes.map(node => {
+                const category = node.primary_category || (node.categories && node.categories[0]);
+                const categoryColor = getCategoryColor(category);
+
+                return {
+                    ...node,
+                    color: {
+                        background: categoryColor,
+                        border: categoryColor,
+                        highlight: {
+                            background: categoryColor,
+                            border: '#000'
+                        }
+                    },
+                    font: {
+                        color: '#fff',
+                        size: 14
+                    },
+                    title: `${node.title}<br><b>Category:</b> ${category || 'Unknown'}<br><b>Authors:</b> ${node.authors || 'Unknown'}`
+                };
+            });
+        }
+
         // vis.js network options
         const options = {
             nodes: {
@@ -166,18 +233,6 @@ async function loadGraph() {
                 margin: 10,
                 widthConstraint: {
                     maximum: 200
-                },
-                font: {
-                    size: 14,
-                    color: '#333'
-                },
-                color: {
-                    background: '#e8f0fe',
-                    border: '#1a73e8',
-                    highlight: {
-                        background: '#d4e7ff',
-                        border: '#1557b0'
-                    }
                 }
             },
             edges: {

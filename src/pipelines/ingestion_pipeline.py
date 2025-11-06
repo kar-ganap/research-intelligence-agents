@@ -13,6 +13,10 @@ from typing import Dict, List, Tuple, Optional
 import logging
 from pathlib import Path
 import time
+import json
+import os
+
+from google.cloud import pubsub_v1
 
 from src.tools.pdf_reader import read_pdf
 from src.agents.ingestion.entity_agent import EntityAgent
@@ -42,7 +46,8 @@ class IngestionPipeline:
         self,
         project_id: str = None,
         enable_relationships: bool = False,
-        enable_alerting: bool = False
+        enable_alerting: bool = False,
+        enable_pubsub: bool = True
     ):
         """
         Initialize the ingestion pipeline.
@@ -51,11 +56,14 @@ class IngestionPipeline:
             project_id: GCP project ID for Firestore
             enable_relationships: Whether to detect relationships (Phase 2.1 feature)
             enable_alerting: Whether to check watch rules and create alerts (Phase 2.2 feature)
+            enable_pubsub: Whether to publish to Pub/Sub after ingestion (triggers graph updater)
         """
         self.entity_agent = EntityAgent()
         self.indexer_agent = IndexerAgent(project_id=project_id)
         self.enable_relationships = enable_relationships
         self.enable_alerting = enable_alerting
+        self.enable_pubsub = enable_pubsub
+        self.project_id = project_id or os.environ.get('GOOGLE_CLOUD_PROJECT')
 
         if enable_relationships:
             self.relationship_agent = RelationshipAgent()
@@ -68,6 +76,12 @@ class IngestionPipeline:
             logger.info("IngestionPipeline initialized with proactive alerting")
         else:
             self.claim_matcher = None
+
+        if enable_pubsub:
+            self.pubsub_publisher = pubsub_v1.PublisherClient()
+            logger.info("IngestionPipeline initialized with Pub/Sub publishing")
+        else:
+            self.pubsub_publisher = None
 
         if not enable_relationships and not enable_alerting:
             logger.info("IngestionPipeline initialized (relationships and alerting disabled)")
@@ -277,6 +291,28 @@ class IngestionPipeline:
             result["paper_id"] = index_result["paper_id"]
             result["message"] = "Paper ingested successfully"
             result["duration"] = time.time() - start_time
+
+            # Publish to Pub/Sub to trigger graph updater
+            if self.enable_pubsub and self.pubsub_publisher and self.project_id:
+                try:
+                    topic_path = self.pubsub_publisher.topic_path(self.project_id, 'docs.ready')
+                    message_data = {
+                        'paper_id': result['paper_id'],
+                        'title': entities.get('title', ''),
+                        'status': 'ingested'
+                    }
+
+                    future = self.pubsub_publisher.publish(
+                        topic_path,
+                        json.dumps(message_data).encode('utf-8')
+                    )
+                    message_id = future.result()
+
+                    logger.info(f"Published to docs.ready topic (message_id: {message_id})")
+                    result["pubsub_message_id"] = message_id
+
+                except Exception as e:
+                    logger.warning(f"Failed to publish to Pub/Sub (non-blocking): {e}")
 
             logger.info(
                 f"✅ Successfully ingested paper: {result['paper_id']} "
