@@ -289,6 +289,38 @@ def watch_rules():
             if 'rule_type' not in data or 'user_email' not in data:
                 return jsonify({'error': 'Missing required fields: rule_type, user_email'}), 400
 
+            # Check for duplicate rules
+            rules_ref = db.collection('watch_rules')
+            query = rules_ref.where('rule_type', '==', data['rule_type']).where('user_email', '==', data['user_email'])
+
+            # Add type-specific duplicate checks
+            if data['rule_type'] == 'keyword' and 'keywords' in data:
+                keywords_sorted = sorted(data['keywords'])  # Sort for comparison
+                for doc in query.stream():
+                    existing_rule = doc.to_dict()
+                    if 'keywords' in existing_rule:
+                        existing_keywords_sorted = sorted(existing_rule['keywords'])
+                        if keywords_sorted == existing_keywords_sorted:
+                            logger.info(f"[API Gateway] Duplicate keyword rule found: {doc.id}")
+                            return jsonify({'rule_id': doc.id, 'success': True, 'message': 'Rule already exists'}), 200
+
+            elif data['rule_type'] == 'author' and 'authors' in data:
+                authors_sorted = sorted(data['authors'])  # Sort for comparison
+                for doc in query.stream():
+                    existing_rule = doc.to_dict()
+                    if 'authors' in existing_rule:
+                        existing_authors_sorted = sorted(existing_rule['authors'])
+                        if authors_sorted == existing_authors_sorted:
+                            logger.info(f"[API Gateway] Duplicate author rule found: {doc.id}")
+                            return jsonify({'rule_id': doc.id, 'success': True, 'message': 'Rule already exists'}), 200
+
+            elif data['rule_type'] == 'claim' and 'claim_description' in data:
+                for doc in query.stream():
+                    existing_rule = doc.to_dict()
+                    if existing_rule.get('claim_description') == data['claim_description']:
+                        logger.info(f"[API Gateway] Duplicate claim rule found: {doc.id}")
+                        return jsonify({'rule_id': doc.id, 'success': True, 'message': 'Rule already exists'}), 200
+
             # Add created_at timestamp
             from datetime import datetime
             data['created_at'] = datetime.utcnow().isoformat() + 'Z'

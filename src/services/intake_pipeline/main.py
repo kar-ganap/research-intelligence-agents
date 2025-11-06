@@ -149,9 +149,21 @@ def process_paper(paper_data: Dict) -> Dict:
             logger.info(f"Running ingestion pipeline for {arxiv_id}...")
             ingestion_pipeline = get_ingestion_pipeline()
 
+            # Pass through metadata fields for Firestore
+            metadata = {}
+            if 'categories' in paper_data:
+                metadata['categories'] = paper_data['categories']
+            if 'primary_category' in paper_data:
+                metadata['primary_category'] = paper_data['primary_category']
+            if 'published' in paper_data:
+                metadata['published'] = paper_data['published']
+            if 'updated' in paper_data:
+                metadata['updated'] = paper_data['updated']
+
             result = ingestion_pipeline.ingest_paper(
                 pdf_path=str(pdf_path),
-                paper_id=arxiv_id
+                arxiv_id=arxiv_id,
+                metadata=metadata
             )
 
             if result['status'] == 'success':

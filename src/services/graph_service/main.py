@@ -110,12 +110,20 @@ def graph():
             title = paper.get('title', 'Unknown')
             label = title[:50] + '...' if len(title) > 50 else title
 
-            nodes.append({
+            node = {
                 'id': paper['paper_id'],
                 'label': label,
                 'title': title,  # Full title on hover
                 'authors': ', '.join(paper.get('authors', [])[:3])
-            })
+            }
+
+            # Add category fields if available
+            if paper.get('primary_category'):
+                node['primary_category'] = paper['primary_category']
+            if paper.get('categories'):
+                node['categories'] = paper['categories']
+
+            nodes.append(node)
 
         edges = []
         for rel in relationships:

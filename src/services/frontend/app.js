@@ -20,6 +20,26 @@ const CATEGORY_COLORS = {
     'default': '#95A5A6'  // Gray
 };
 
+// Category display names
+const CATEGORY_NAMES = {
+    'cs.AI': 'Artificial Intelligence (cs.AI)',
+    'cs.LG': 'Machine Learning (cs.LG)',
+    'cs.CL': 'Computation and Language (cs.CL)',
+    'cs.CV': 'Computer Vision (cs.CV)',
+    'cs.MA': 'Multiagent Systems (cs.MA)',
+    'math.ST': 'Statistics Theory (math.ST)',
+    'stat.ML': 'Machine Learning - Statistics (stat.ML)',
+    'stat.CO': 'Computation - Statistics (stat.CO)',
+    'default': 'Other'
+};
+
+// Relationship type color mapping (distinct from node colors)
+const RELATIONSHIP_COLORS = {
+    'supports': '#2E7D32',     // Green - corroborating evidence
+    'contradicts': '#C62828',  // Red - conflicting findings
+    'extends': '#1565C0'       // Blue - builds upon
+};
+
 /**
  * Get color for a given arXiv category
  */
@@ -28,6 +48,73 @@ function getCategoryColor(category) {
     // Handle categories like "cs.LG" or just "cs.LG, cs.AI" (take first)
     const primaryCat = category.split(',')[0].trim();
     return CATEGORY_COLORS[primaryCat] || CATEGORY_COLORS.default;
+}
+
+/**
+ * Get display name for a given arXiv category
+ */
+function getCategoryDisplayName(category) {
+    if (!category) return CATEGORY_NAMES.default;
+    const primaryCat = category.split(',')[0].trim();
+    return CATEGORY_NAMES[primaryCat] || `${category}`;
+}
+
+/**
+ * Get color for a given relationship type
+ */
+function getRelationshipColor(relationshipType) {
+    return RELATIONSHIP_COLORS[relationshipType] || '#616161'; // Default gray fallback
+}
+
+/**
+ * Convert string to title case with special handling for acronyms and common words
+ */
+function toTitleCase(str) {
+    if (!str) return str;
+
+    // Words to keep lowercase (unless first word)
+    const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'of', 'in', 'with', 'via']);
+
+    // Common acronyms to keep uppercase
+    const acronyms = new Set(['AI', 'ML', 'NLP', 'CV', 'GPU', 'CPU', 'API', 'BERT', 'GPT', 'LSTM', 'GAN', 'CNN', 'RNN', 'RL']);
+
+    return str.split(' ').map((word, index) => {
+        // Keep empty strings as-is
+        if (!word) return word;
+
+        // Strip punctuation for comparison but preserve it
+        const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '');
+        const upperClean = cleanWord.toUpperCase();
+        const lowerWord = word.toLowerCase();
+
+        // Check if word (without punctuation) is a known acronym
+        if (acronyms.has(upperClean)) {
+            // Preserve original punctuation but uppercase the letters
+            return word.replace(/[a-zA-Z0-9]/g, c => c.toUpperCase());
+        }
+
+        // Detect likely acronyms:
+        // - 2-6 characters (without punctuation)
+        // - All letters are uppercase OR it's a mixed case like "GPT4" (uppercase letters + numbers)
+        // - No consecutive vowels (typical of acronyms)
+        if (cleanWord.length >= 2 && cleanWord.length <= 6) {
+            const hasConsecutiveVowels = /[aeiou]{2,}/i.test(cleanWord);
+            const isAcronymPattern = /^[A-Z]+[0-9]*$/.test(cleanWord);
+
+            if (!hasConsecutiveVowels && isAcronymPattern) {
+                // Preserve original punctuation but uppercase the letters/numbers
+                return word.replace(/[a-zA-Z0-9]/g, c => c.toUpperCase());
+            }
+        }
+
+        // Keep minor words lowercase (except if first word)
+        if (index > 0 && minorWords.has(lowerWord.replace(/[^a-zA-Z]/g, ''))) {
+            return lowerWord;
+        }
+
+        // Title case: capitalize first letter
+        return lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
+    }).join(' ');
 }
 
 // Initialize on page load
@@ -94,29 +181,71 @@ async function askQuestion() {
         // Display answer
         let html = `<p><strong>Question:</strong> ${data.question}</p>`;
         html += `<div style="margin-top: 15px;"><strong>Answer:</strong></div>`;
-        html += `<div style="margin-top: 10px;"><p>${formatAnswer(data.answer)}</p>`;
+        html += `<div style="margin-top: 10px; background: #f8f9fa; padding: 15px; border-radius: 6px;"><p style="margin: 0;">${formatAnswer(data.answer)}</p></div>`;
 
-        // Add confidence badge
+        // Add confidence section with details
         if (data.confidence) {
             const score = data.confidence.score;
             let badgeClass = 'confidence-low';
             if (score >= 0.8) badgeClass = 'confidence-high';
             else if (score >= 0.5) badgeClass = 'confidence-medium';
 
-            html += `<span class="confidence-badge ${badgeClass}">Confidence: ${(score * 100).toFixed(0)}%</span>`;
+            html += `<div style="margin-top: 15px;">`;
+            html += `<p><strong>Confidence Assessment:</strong> <span class="confidence-badge ${badgeClass}">${(score * 100).toFixed(0)}%</span></p>`;
+
+            // Show breakdown if available
+            if (data.confidence.breakdown) {
+                const b = data.confidence.breakdown;
+                html += `<div style="margin-left: 15px; font-size: 13px; color: #5f6368;">`;
+                html += `<div>Evidence Strength: ${(b.evidence_strength * 100).toFixed(0)}%</div>`;
+                html += `<div>Consistency: ${(b.consistency * 100).toFixed(0)}%</div>`;
+                html += `<div>Coverage: ${(b.coverage * 100).toFixed(0)}%</div>`;
+                html += `<div>Source Quality: ${(b.source_quality * 100).toFixed(0)}%</div>`;
+                html += `</div>`;
+            }
+
+            // Show reasoning if available
+            if (data.confidence.reasoning) {
+                html += `<div style="margin-top: 8px; font-size: 13px; font-style: italic; color: #5f6368;">${data.confidence.reasoning}</div>`;
+            }
+
+            // Show warning if present
+            if (data.confidence.warning) {
+                html += `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 13px; color: #856404;">⚠️ ${data.confidence.warning}</div>`;
+            }
+
+            html += `</div>`;
         }
-        html += `</div>`;
 
         answerContent.innerHTML = html;
 
-        // Display citations
+        // Display citations and retrieved papers
+        let citationsHtml = '';
+
         if (data.citations && data.citations.length > 0) {
-            let citationsHtml = '<p><strong>Sources:</strong></p>';
+            citationsHtml += '<p><strong>Sources:</strong></p>';
             data.citations.forEach(citation => {
                 citationsHtml += `<span class="citation">${citation}</span>`;
             });
-            citationsBox.innerHTML = citationsHtml;
         }
+
+        // Show retrieved papers if available
+        if (data.retrieved_papers && data.retrieved_papers.length > 0) {
+            citationsHtml += '<p style="margin-top: 15px;"><strong>Retrieved Papers:</strong></p>';
+            citationsHtml += '<div style="font-size: 13px;">';
+            data.retrieved_papers.forEach((paper, idx) => {
+                const paperTitle = toTitleCase(paper.title || paper.paper_id);
+                citationsHtml += `<div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">`;
+                citationsHtml += `${idx + 1}. ${paperTitle}`;
+                if (paper.relevance_score) {
+                    citationsHtml += ` <span style="font-size: 11px; color: #5f6368;">(relevance: ${(paper.relevance_score * 100).toFixed(0)}%)</span>`;
+                }
+                citationsHtml += `</div>`;
+            });
+            citationsHtml += '</div>';
+        }
+
+        citationsBox.innerHTML = citationsHtml;
 
     } catch (error) {
         console.error('Error asking question:', error);
@@ -128,8 +257,69 @@ async function askQuestion() {
 }
 
 /**
- * Load all papers from the corpus
+ * Load all papers from the corpus (grouped by category with collapsible sections)
  */
+// Global papers data and sort state
+let allPapersData = [];
+let sortOrder = {}; // Track sort order per category
+
+function sortCategoryPapers(categoryId, sortKey) {
+    // Toggle sort order
+    const currentOrder = sortOrder[categoryId] || 'desc';
+    sortOrder[categoryId] = currentOrder === 'desc' ? 'asc' : 'desc';
+
+    // Get category from categoryId
+    const category = categoryId.replace(/_/g, '.');
+
+    // Find papers for this category
+    const categoryPapers = allPapersData.filter(paper => {
+        const paperCategory = paper.primary_category || (paper.categories && paper.categories[0]) || 'Unknown';
+        return paperCategory === category;
+    });
+
+    // Sort papers
+    categoryPapers.sort((a, b) => {
+        if (sortKey === 'published') {
+            const dateA = a.published ? new Date(a.published) : new Date(0);
+            const dateB = b.published ? new Date(b.published) : new Date(0);
+            return sortOrder[categoryId] === 'asc' ? dateA - dateB : dateB - dateA;
+        }
+        return 0;
+    });
+
+    // Rebuild table for this category
+    const tableBody = document.getElementById(`table-body-${categoryId}`);
+    if (!tableBody) return;
+
+    let html = '';
+    categoryPapers.forEach(paper => {
+        const arxivId = paper.arxiv_id || paper.paper_id;
+        const arxivUrl = arxivId ? `https://arxiv.org/abs/${arxivId}` : null;
+        const pdfUrl = arxivId ? `https://arxiv.org/pdf/${arxivId}.pdf` : null;
+        const displayTitle = toTitleCase(paper.title);
+
+        html += `
+            <tr>
+                <td style="padding: 12px 8px;">
+                    ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="color: #1a73e8; text-decoration: none;">${displayTitle}</a>` : displayTitle}
+                    ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="margin-left: 8px; font-size: 12px; color: #5f6368;" title="View on arXiv">↗</a>` : ''}
+                    ${pdfUrl ? `<a href="${pdfUrl}" target="_blank" style="margin-left: 4px; font-size: 12px; color: #5f6368;" title="Download PDF">📥</a>` : ''}
+                </td>
+                <td style="padding: 12px 8px; color: #5f6368; font-size: 14px;">${paper.authors ? paper.authors.slice(0, 3).join(', ') + (paper.authors.length > 3 ? ', et al.' : '') : 'Unknown authors'}</td>
+                <td style="padding: 12px 8px; color: #5f6368; font-size: 14px; white-space: nowrap;">${paper.published ? new Date(paper.published).toLocaleDateString() : 'N/A'}</td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+
+    // Update sort arrow
+    const sortArrow = document.getElementById(`sort-arrow-${categoryId}`);
+    if (sortArrow) {
+        sortArrow.textContent = sortOrder[categoryId] === 'asc' ? '▲' : '▼';
+    }
+}
+
 async function loadPapers() {
     const papersList = document.getElementById('papersList');
 
@@ -142,36 +332,91 @@ async function loadPapers() {
 
         const data = await response.json();
         const papers = data.papers || [];
+        allPapersData = papers; // Store globally
 
         if (papers.length === 0) {
             papersList.innerHTML = '<p style="color: #5f6368;">No papers in corpus yet.</p>';
             return;
         }
 
-        let html = '';
+        // Group papers by category
+        const papersByCategory = {};
         papers.forEach(paper => {
-            // Build arXiv links
-            const arxivId = paper.arxiv_id || paper.paper_id;
-            const arxivUrl = arxivId ? `https://arxiv.org/abs/${arxivId}` : null;
-            const pdfUrl = arxivId ? `https://arxiv.org/pdf/${arxivId}.pdf` : null;
-
-            // Get category badge
             const category = paper.primary_category || (paper.categories && paper.categories[0]) || 'Unknown';
+            if (!papersByCategory[category]) {
+                papersByCategory[category] = [];
+            }
+            papersByCategory[category].push(paper);
+        });
+
+        // Sort each category by published date (newest first by default)
+        Object.keys(papersByCategory).forEach(category => {
+            const categoryId = category.replace(/\./g, '_');
+            sortOrder[categoryId] = 'desc'; // Initialize sort order
+
+            papersByCategory[category].sort((a, b) => {
+                const dateA = a.published ? new Date(a.published) : new Date(0);
+                const dateB = b.published ? new Date(b.published) : new Date(0);
+                return dateB - dateA; // Newest first
+            });
+        });
+
+        // Build HTML with collapsible sections and tables
+        let html = '';
+        const sortedCategories = Object.keys(papersByCategory).sort();
+
+        sortedCategories.forEach(category => {
+            const categoryPapers = papersByCategory[category];
             const categoryColor = getCategoryColor(category);
+            const categoryDisplayName = getCategoryDisplayName(category);
+            const categoryId = category.replace(/\./g, '_'); // Safe ID for HTML
 
             html += `
-                <div class="paper-item">
-                    <div class="paper-title">
-                        ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="color: #1a73e8; text-decoration: none;">${paper.title}</a>` : paper.title}
-                        ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="margin-left: 8px; font-size: 12px; color: #5f6368;" title="View on arXiv">↗</a>` : ''}
-                        ${pdfUrl ? `<a href="${pdfUrl}" target="_blank" style="margin-left: 4px; font-size: 12px; color: #5f6368;" title="Download PDF">📥</a>` : ''}
+                <div class="category-section">
+                    <div class="category-header" onclick="toggleCategory('${categoryId}')" style="cursor: pointer; background: ${categoryColor}15; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <span style="display: inline-block; width: 12px; height: 12px; background: ${categoryColor}; border-radius: 50%; margin-right: 8px;"></span>
+                            <span style="font-weight: 600; color: #333;">${categoryDisplayName}</span>
+                            <span style="margin-left: 8px; font-size: 12px; color: #5f6368;">(${categoryPapers.length} paper${categoryPapers.length !== 1 ? 's' : ''})</span>
+                        </div>
+                        <span id="toggle-${categoryId}" style="font-size: 18px; color: #5f6368;">▼</span>
                     </div>
-                    <div class="paper-authors">${paper.authors ? paper.authors.join(', ') : 'Unknown authors'}</div>
-                    <div style="margin-top: 4px;">
-                        <span style="display: inline-block; background: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
-                            ${category}
-                        </span>
-                        ${paper.published ? `<span style="margin-left: 8px; font-size: 12px; color: #5f6368;">📅 ${new Date(paper.published).toLocaleDateString()}</span>` : ''}
+                    <div id="papers-${categoryId}" class="category-papers" style="display: block;">
+                        <table style="width: 100%; border-collapse: collapse; margin-left: 12px; margin-bottom: 16px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #e0e0e0;">
+                                    <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #5f6368; font-size: 13px;">Title</th>
+                                    <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #5f6368; font-size: 13px; width: 30%;">Authors</th>
+                                    <th onclick="sortCategoryPapers('${categoryId}', 'published')" style="text-align: left; padding: 12px 8px; font-weight: 600; color: #5f6368; font-size: 13px; width: 15%; cursor: pointer; user-select: none;" title="Click to sort">
+                                        Published Date <span id="sort-arrow-${categoryId}">▼</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body-${categoryId}">
+            `;
+
+            categoryPapers.forEach(paper => {
+                const arxivId = paper.arxiv_id || paper.paper_id;
+                const arxivUrl = arxivId ? `https://arxiv.org/abs/${arxivId}` : null;
+                const pdfUrl = arxivId ? `https://arxiv.org/pdf/${arxivId}.pdf` : null;
+                const displayTitle = toTitleCase(paper.title);
+
+                html += `
+                    <tr>
+                        <td style="padding: 12px 8px;">
+                            ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="color: #1a73e8; text-decoration: none;">${displayTitle}</a>` : displayTitle}
+                            ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="margin-left: 8px; font-size: 12px; color: #5f6368;" title="View on arXiv">↗</a>` : ''}
+                            ${pdfUrl ? `<a href="${pdfUrl}" target="_blank" style="margin-left: 4px; font-size: 12px; color: #5f6368;" title="Download PDF">📥</a>` : ''}
+                        </td>
+                        <td style="padding: 12px 8px; color: #5f6368; font-size: 14px;">${paper.authors ? paper.authors.slice(0, 3).join(', ') + (paper.authors.length > 3 ? ', et al.' : '') : 'Unknown authors'}</td>
+                        <td style="padding: 12px 8px; color: #5f6368; font-size: 14px; white-space: nowrap;">${paper.published ? new Date(paper.published).toLocaleDateString() : 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             `;
@@ -182,6 +427,22 @@ async function loadPapers() {
     } catch (error) {
         console.error('Error loading papers:', error);
         papersList.innerHTML = `<div class="error">Error loading papers: ${error.message}</div>`;
+    }
+}
+
+/**
+ * Toggle category section visibility
+ */
+function toggleCategory(categoryId) {
+    const papersDiv = document.getElementById(`papers-${categoryId}`);
+    const toggleIcon = document.getElementById(`toggle-${categoryId}`);
+
+    if (papersDiv.style.display === 'none') {
+        papersDiv.style.display = 'block';
+        toggleIcon.textContent = '▼';
+    } else {
+        papersDiv.style.display = 'none';
+        toggleIcon.textContent = '▶';
     }
 }
 
@@ -206,9 +467,12 @@ async function loadGraph() {
             data.nodes = data.nodes.map(node => {
                 const category = node.primary_category || (node.categories && node.categories[0]);
                 const categoryColor = getCategoryColor(category);
+                const displayTitle = toTitleCase(node.title);
+                const displayLabel = displayTitle.length > 50 ? displayTitle.substring(0, 50) + '...' : displayTitle;
 
                 return {
                     ...node,
+                    label: displayLabel,
                     color: {
                         background: categoryColor,
                         border: categoryColor,
@@ -221,7 +485,24 @@ async function loadGraph() {
                         color: '#fff',
                         size: 14
                     },
-                    title: `${node.title}<br><b>Category:</b> ${category || 'Unknown'}<br><b>Authors:</b> ${node.authors || 'Unknown'}`
+                    title: `${displayTitle}<br><b>Category:</b> ${category || 'Unknown'}<br><b>Authors:</b> ${node.authors || 'Unknown'}`
+                };
+            });
+        }
+
+        // Apply relationship-based colors to edges
+        if (data.edges) {
+            data.edges = data.edges.map(edge => {
+                const relationshipColor = getRelationshipColor(edge.label);
+
+                return {
+                    ...edge,
+                    color: {
+                        color: relationshipColor,
+                        highlight: relationshipColor,
+                        hover: relationshipColor
+                    },
+                    width: 2
                 };
             });
         }
@@ -245,10 +526,6 @@ async function loadGraph() {
                 font: {
                     size: 12,
                     align: 'middle'
-                },
-                color: {
-                    color: '#5f6368',
-                    highlight: '#1a73e8'
                 },
                 smooth: {
                     type: 'cubicBezier',
@@ -283,7 +560,10 @@ async function loadGraph() {
                 const nodeId = params.nodes[0];
                 const node = data.nodes.find(n => n.id === nodeId);
                 if (node) {
-                    alert(`Paper: ${node.title}\nAuthors: ${node.authors}`);
+                    // Extract title from the tooltip (which has the full title)
+                    const titleMatch = node.title.match(/^(.+?)<br>/);
+                    const displayTitle = titleMatch ? titleMatch[1] : toTitleCase(node.label);
+                    alert(`Paper: ${displayTitle}\nAuthors: ${node.authors}`);
                 }
             }
         });
@@ -409,10 +689,11 @@ async function loadAlerts() {
         let html = '';
         alerts.forEach(alert => {
             const isNew = !alert.sent;
+            const displayTitle = toTitleCase(alert.paper_title);
             html += `
                 <div class="alert-item ${isNew ? 'alert-new' : ''}">
                     <div style="font-weight: 600; margin-bottom: 5px;">
-                        ${alert.paper_title}
+                        ${displayTitle}
                         ${isNew ? '<span style="background: #1a73e8; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 5px;">NEW</span>' : ''}
                     </div>
                     <div style="font-size: 13px; color: #5f6368; margin-bottom: 8px;">
@@ -450,37 +731,68 @@ async function loadWatchRules() {
         const rules = data.rules || [];
 
         if (rules.length === 0) {
-            rulesList.innerHTML = '<p style="color: #5f6368;">No watch rules yet. Create one to get alerts!</p>';
+            // Show example rules (without email) when no rules exist
+            rulesList.innerHTML = `
+                <p style="color: #5f6368; margin-bottom: 20px;">No watch rules yet. Create one to get alerts! Here are some examples:</p>
+
+                <div class="rule-item" style="opacity: 0.7; border: 2px dashed #e0e0e0;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #1a73e8;">Keyword Rule</div>
+                    <div class="rule-keywords">
+                        <span class="keyword-tag">attention mechanisms</span>
+                        <span class="keyword-tag">transformers</span>
+                        <span class="keyword-tag">self-attention</span>
+                    </div>
+                </div>
+
+                <div class="rule-item" style="opacity: 0.7; border: 2px dashed #e0e0e0;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #1a73e8;">Author Rule</div>
+                    <div style="font-size: 14px; color: #333;">
+                        Yoshua Bengio, Geoffrey Hinton, Yann LeCun
+                    </div>
+                </div>
+
+                <div class="rule-item" style="opacity: 0.7; border: 2px dashed #e0e0e0;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #1a73e8;">Claim Rule</div>
+                    <div style="font-size: 14px; color: #333;">
+                        Papers introducing novel neural network architectures achieving state-of-the-art results on benchmark datasets
+                    </div>
+                </div>
+            `;
             return;
         }
 
         let html = '';
         rules.forEach(rule => {
-            html += `
-                <div class="rule-item">
-                    <div style="font-weight: 600; margin-bottom: 5px;">
-                        ${rule.rule_type.charAt(0).toUpperCase() + rule.rule_type.slice(1)} Rule
+            // Only create a card if the rule has the required fields
+            let ruleContent = '';
+
+            if (rule.rule_type === 'keyword' && rule.keywords && rule.keywords.length > 0) {
+                ruleContent = `
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #1a73e8;">Keyword Rule</div>
+                    <div class="rule-keywords">
+                        ${rule.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}
                     </div>
-                    ${rule.keywords ? `
-                        <div class="rule-keywords">
-                            ${rule.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}
-                        </div>
-                    ` : ''}
-                    ${rule.authors ? `
-                        <div style="font-size: 13px; color: #5f6368; margin-top: 5px;">
-                            Authors: ${rule.authors.join(', ')}
-                        </div>
-                    ` : ''}
-                    ${rule.claim_description ? `
-                        <div style="font-size: 13px; color: #5f6368; margin-top: 5px;">
-                            ${rule.claim_description}
-                        </div>
-                    ` : ''}
-                    <div style="font-size: 12px; color: #5f6368; margin-top: 8px;">
-                        Email: ${rule.user_email}
+                `;
+            } else if (rule.rule_type === 'author' && rule.authors && rule.authors.length > 0) {
+                ruleContent = `
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #1a73e8;">Author Rule</div>
+                    <div style="font-size: 14px; color: #333;">
+                        ${rule.authors.join(', ')}
                     </div>
-                </div>
-            `;
+                `;
+            } else if (rule.rule_type === 'claim' && rule.claim_description) {
+                ruleContent = `
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #1a73e8;">Claim Rule</div>
+                    <div style="font-size: 14px; color: #333;">
+                        ${rule.claim_description}
+                    </div>
+                `;
+            }
+
+            // Only add the rule card if we have content
+            if (ruleContent) {
+                html += `<div class="rule-item">${ruleContent}</div>`;
+            }
         });
 
         rulesList.innerHTML = html;
@@ -651,4 +963,10 @@ function togglePhysics() {
             enabled: physicsEnabled
         }
     });
+
+    // Update button text based on state
+    const btn = document.getElementById('togglePhysicsBtn');
+    if (btn) {
+        btn.textContent = physicsEnabled ? 'Freeze Graph' : 'Unfreeze Graph';
+    }
 }

@@ -33,6 +33,7 @@ class GCPConfig:
     project_id: str
     region: str
     credentials_path: Optional[str]
+    google_api_key: str
 
 
 @dataclass
@@ -59,7 +60,8 @@ def load_config() -> Config:
         gcp=GCPConfig(
             project_id=os.getenv('GOOGLE_CLOUD_PROJECT', ''),
             region=os.getenv('GCP_REGION', 'us-central1'),
-            credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+            credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
+            google_api_key=os.getenv('GOOGLE_API_KEY', '')
         ),
         agent=AgentConfig(
             default_model=os.getenv('DEFAULT_MODEL', 'gemini-2.5-pro'),

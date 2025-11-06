@@ -30,7 +30,7 @@ class IndexerAgent:
         self.firestore_client = FirestoreClient(project_id=project_id)
         logger.info("IndexerAgent initialized")
 
-    def index(self, entities: Dict, pdf_path: str = "", arxiv_id: str = "") -> Dict:
+    def index(self, entities: Dict, pdf_path: str = "", arxiv_id: str = "", metadata: Dict = None) -> Dict:
         """
         Index paper entities to Firestore.
 
@@ -38,6 +38,7 @@ class IndexerAgent:
             entities: Dictionary with title, authors, key_finding
             pdf_path: Path to the PDF file (optional)
             arxiv_id: arXiv ID if available (optional)
+            metadata: Additional metadata (categories, primary_category, published, updated)
 
         Returns:
             Dictionary with:
@@ -45,6 +46,9 @@ class IndexerAgent:
                 - paper_id: str (if successful)
                 - message: str
         """
+        if metadata is None:
+            metadata = {}
+
         try:
             # Validate required fields
             if not entities.get("title"):
@@ -61,6 +65,16 @@ class IndexerAgent:
                 "pdf_path": pdf_path,
                 "arxiv_id": arxiv_id,
             }
+
+            # Add metadata fields if provided
+            if metadata.get("categories"):
+                paper_data["categories"] = metadata["categories"]
+            if metadata.get("primary_category"):
+                paper_data["primary_category"] = metadata["primary_category"]
+            if metadata.get("published"):
+                paper_data["published"] = metadata["published"]
+            if metadata.get("updated"):
+                paper_data["updated"] = metadata["updated"]
 
             # Check if paper already exists
             if self.firestore_client.paper_exists(

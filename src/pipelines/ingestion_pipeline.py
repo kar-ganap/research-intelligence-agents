@@ -86,13 +86,14 @@ class IngestionPipeline:
         if not enable_relationships and not enable_alerting:
             logger.info("IngestionPipeline initialized (relationships and alerting disabled)")
 
-    def ingest_paper(self, pdf_path: str, arxiv_id: str = "") -> Dict:
+    def ingest_paper(self, pdf_path: str, arxiv_id: str = "", metadata: Dict = None) -> Dict:
         """
         Ingest a single paper through the full pipeline.
 
         Args:
             pdf_path: Path to the PDF file
             arxiv_id: arXiv ID (optional, for metadata)
+            metadata: Additional metadata (categories, primary_category, published, updated)
 
         Returns:
             Dictionary with:
@@ -102,6 +103,8 @@ class IngestionPipeline:
                 - duration: float (seconds)
                 - error: str (if failed)
         """
+        if metadata is None:
+            metadata = {}
         start_time = time.time()
 
         result = {
@@ -160,7 +163,8 @@ class IngestionPipeline:
             index_result = self.indexer_agent.index(
                 entities=entities,
                 pdf_path=pdf_path,
-                arxiv_id=arxiv_id
+                arxiv_id=arxiv_id,
+                metadata=metadata
             )
 
             result["steps"]["indexing"] = {
