@@ -11,6 +11,7 @@ Implements 5 types of rule matching:
 
 from typing import Dict, List, Optional
 from src.agents.base import BaseResearchAgent
+from src.utils.config import config
 
 
 # ============================================================================

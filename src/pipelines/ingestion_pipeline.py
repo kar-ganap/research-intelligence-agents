@@ -272,6 +272,43 @@ class IngestionPipeline:
                                 f"(score: {match_result['match_score']:.2f})"
                             )
 
+                            # Publish to Pub/Sub to trigger email notification
+                            if self.enable_pubsub and self.pubsub_publisher and self.project_id:
+                                try:
+                                    topic_path = self.pubsub_publisher.topic_path(
+                                        self.project_id,
+                                        'arxiv.matches'
+                                    )
+
+                                    # Prepare email notification data
+                                    email_data = {
+                                        'user_email': rule.get('user_email', ''),
+                                        'user_name': rule.get('user_name', 'Researcher'),
+                                        'paper_title': entities.get('title', ''),
+                                        'paper_authors': entities.get('authors', []),
+                                        'match_reason': match_result.get('match_explanation', f"Matches your watch rule: {rule.get('name', 'unnamed')}"),
+                                        'paper_id': index_result['paper_id'],
+                                        'arxiv_id': paper_data.get('arxiv_id', ''),
+                                        'alert_id': alert_id
+                                    }
+
+                                    future = self.pubsub_publisher.publish(
+                                        topic_path,
+                                        json.dumps(email_data).encode('utf-8')
+                                    )
+                                    message_id = future.result()
+
+                                    logger.info(
+                                        f"Published alert {alert_id} to arxiv.matches "
+                                        f"(message_id: {message_id})"
+                                    )
+
+                                except Exception as e:
+                                    logger.warning(
+                                        f"Failed to publish alert {alert_id} to Pub/Sub "
+                                        f"(non-blocking): {e}"
+                                    )
+
                     result["steps"]["alerting"] = {
                         "success": True,
                         "rules_checked": len(active_rules),
