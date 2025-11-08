@@ -105,10 +105,12 @@ class GraphQueryAgent:
 
         papers_context = ""
         if available_papers:
-            papers_list = "\n".join([f"- {p}" for p in available_papers[:20]])
+            papers_list = "\n".join([f"- {p}" for p in available_papers[:50]])
             papers_context = f"""
-Available papers in the corpus (for reference):
+Available papers in the corpus:
 {papers_list}
+
+IMPORTANT: If the user mentions a paper name (e.g., "BERT", "Transformer", "GPT-3"), you MUST match it to the EXACT full title from the list above. Return the complete title, not a shortened version.
 """
 
         return f"""You are a query intent classifier for a research paper knowledge graph system.
@@ -137,7 +139,7 @@ Analyze this question and respond with JSON:
     "is_graph_query": true/false,
     "query_type": "citations|contradictions|extensions|author|popularity|relationships|none",
     "parameters": {{
-        "paper_title": "extracted paper name if mentioned",
+        "paper_title": "EXACT FULL TITLE from available papers list (if paper mentioned)",
         "author_name": "extracted author name if mentioned",
         "topic": "topic/subject if mentioned",
         "limit": 10
@@ -149,8 +151,10 @@ Analyze this question and respond with JSON:
 Guidelines:
 - Set is_graph_query=true ONLY if asking about relationships/citations/structure
 - Set is_graph_query=false if asking about content/explanation/understanding
-- Extract paper_title even if partial (e.g., "Transformer" for "Transformer paper")
-- Match paper_title to available papers when possible (fuzzy matching OK)
+- **CRITICAL**: For paper_title, return the COMPLETE EXACT title from the available papers list
+  - Example: If user says "BERT", return "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding"
+  - Example: If user says "Transformer", return "Attention Is All You Need"
+  - Example: If user says "GPT-3", return "Language Models are Few-Shot Learners"
 - For author queries, extract full name if present
 - Confidence: high (0.9+) if clear intent, medium (0.6-0.8) if ambiguous, low (<0.6) if unclear
 - If not a graph query, set query_type="none"
@@ -161,28 +165,31 @@ Q: "Show me influential papers"
 A: {{"is_graph_query": true, "query_type": "popularity", "parameters": {{"limit": 10}}, "confidence": 0.95, "reasoning": "Clear request for popular/influential papers = popularity query"}}
 
 Q: "What challenges the Transformer approach?"
-A: {{"is_graph_query": true, "query_type": "contradictions", "parameters": {{"paper_title": "Attention Is All You Need", "topic": "Transformer"}}, "confidence": 0.9, "reasoning": "Asking about papers that challenge/contradict Transformers"}}
+A: {{"is_graph_query": true, "query_type": "contradictions", "parameters": {{"paper_title": "Attention Is All You Need", "topic": "Transformer"}}, "confidence": 0.9, "reasoning": "Asking about papers that challenge/contradict Transformers - matched to full title"}}
 
 Q: "What is the Transformer architecture?"
 A: {{"is_graph_query": false, "query_type": "none", "parameters": {{}}, "confidence": 0.95, "reasoning": "Asking for explanation of content, not relationships"}}
 
 Q: "Who wrote the GPT-3 paper?"
-A: {{"is_graph_query": true, "query_type": "author", "parameters": {{"paper_title": "GPT-3"}}, "confidence": 0.9, "reasoning": "Asking about authors of a specific paper"}}
+A: {{"is_graph_query": true, "query_type": "author", "parameters": {{"paper_title": "Language Models are Few-Shot Learners"}}, "confidence": 0.9, "reasoning": "Asking about authors - matched GPT-3 to full title"}}
 
 Q: "Papers by Geoffrey Hinton"
 A: {{"is_graph_query": true, "query_type": "author", "parameters": {{"author_name": "Geoffrey Hinton"}}, "confidence": 0.95, "reasoning": "Clear author query"}}
 
 Q: "What builds upon BERT?"
-A: {{"is_graph_query": true, "query_type": "extensions", "parameters": {{"paper_title": "BERT"}}, "confidence": 0.9, "reasoning": "Asking about papers that extend/build upon BERT"}}
+A: {{"is_graph_query": true, "query_type": "extensions", "parameters": {{"paper_title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding"}}, "confidence": 0.9, "reasoning": "Asking about papers that extend/build upon BERT - matched to full title"}}
 
 Now analyze the user's question."""
 
     def extract_paper_id(self, paper_title_query: str, firestore_client) -> Optional[str]:
         """
-        Find the actual paper ID from a fuzzy title match.
+        Find the actual paper ID from exact title match.
+
+        The LLM is instructed to return exact full titles from the available papers list,
+        so we just need to do a case-insensitive exact match.
 
         Args:
-            paper_title_query: Partial or full paper title from user
+            paper_title_query: Full paper title from LLM (should be exact match)
             firestore_client: Firestore client to search papers
 
         Returns:
@@ -194,35 +201,16 @@ Now analyze the user's question."""
         # Get all papers
         papers = list(firestore_client.db.collection('papers').stream())
 
-        query_lower = paper_title_query.lower()
+        query_lower = paper_title_query.lower().strip()
 
-        # Try exact match first
+        # Exact match (case-insensitive)
         for paper in papers:
             paper_data = paper.to_dict()
-            title = paper_data.get('title', '').lower()
-            if query_lower in title or title in query_lower:
-                logger.info(f"Matched '{paper_title_query}' to paper: {paper_data.get('title')}")
-                return paper_data.get('paper_id')
+            title = paper_data.get('title', '').lower().strip()
+            if title == query_lower:
+                logger.info(f"Matched '{paper_title_query}' to paper ID: {paper.id}")
+                return paper.id
 
-        # Try partial match on key words
-        query_words = set(query_lower.split())
-        best_match = None
-        best_score = 0
-
-        for paper in papers:
-            paper_data = paper.to_dict()
-            title = paper_data.get('title', '').lower()
-            title_words = set(title.split())
-
-            # Calculate overlap score
-            overlap = len(query_words & title_words)
-            if overlap > best_score:
-                best_score = overlap
-                best_match = paper_data
-
-        if best_match and best_score >= 1:
-            logger.info(f"Fuzzy matched '{paper_title_query}' to paper: {best_match.get('title')}")
-            return best_match.get('paper_id')
-
-        logger.warning(f"No paper found matching: {paper_title_query}")
+        # If no exact match, log warning
+        logger.warning(f"No exact match found for: '{paper_title_query}' (LLM should have returned exact title from available papers)")
         return None

@@ -57,6 +57,10 @@ class FirestoreClient:
                 - key_finding: str
                 - pdf_path: str (optional)
                 - arxiv_id: str (optional)
+                - categories: List[str] (optional)
+                - primary_category: str (optional)
+                - published: str (optional)
+                - updated: str (optional)
 
         Returns:
             Document ID of the stored paper
@@ -77,6 +81,16 @@ class FirestoreClient:
             "ingested_at": firestore.SERVER_TIMESTAMP,
             "updated_at": firestore.SERVER_TIMESTAMP,
         }
+
+        # Add arXiv metadata if provided
+        if "categories" in paper_data:
+            doc_data["categories"] = paper_data["categories"]
+        if "primary_category" in paper_data:
+            doc_data["primary_category"] = paper_data["primary_category"]
+        if "published" in paper_data:
+            doc_data["published"] = paper_data["published"]
+        if "updated" in paper_data and paper_data["updated"]:
+            doc_data["updated"] = paper_data["updated"]
 
         # Store in Firestore
         doc_ref = self.db.collection(self.papers_collection).document(paper_id)
@@ -272,9 +286,9 @@ class FirestoreClient:
         Returns:
             List of relationship dictionaries
         """
+        # Note: Don't use order_by as it filters out documents missing the field
         docs = (
             self.db.collection(self.relationships_collection)
-            .order_by("detected_at", direction=firestore.Query.DESCENDING)
             .limit(limit)
             .stream()
         )

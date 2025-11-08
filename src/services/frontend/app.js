@@ -5,7 +5,7 @@
 let network = null;
 let graphData = null; // Store full graph data for filtering
 let selectedFile = null;
-let physicsEnabled = false;
+let physicsEnabled = true; // Physics enabled by default with force-directed layout
 
 // Category color mapping
 const CATEGORY_COLORS = {
@@ -78,7 +78,15 @@ function toTitleCase(str) {
     // Common acronyms to keep uppercase
     const acronyms = new Set(['AI', 'ML', 'NLP', 'CV', 'GPU', 'CPU', 'API', 'BERT', 'GPT', 'LSTM', 'GAN', 'CNN', 'RNN', 'RL']);
 
-    return str.split(' ').map((word, index) => {
+    // Check if the entire title is in ALL CAPS (more than 70% uppercase letters)
+    const letters = str.replace(/[^a-zA-Z]/g, '');
+    const uppercaseCount = (str.match(/[A-Z]/g) || []).length;
+    const isAllCaps = letters.length > 0 && (uppercaseCount / letters.length) > 0.7;
+
+    // If entire title is ALL CAPS, lowercase it first to avoid false acronym detection
+    const workingStr = isAllCaps ? str.toLowerCase() : str;
+
+    return workingStr.split(' ').map((word, index) => {
         // Keep empty strings as-is
         if (!word) return word;
 
@@ -528,26 +536,35 @@ async function loadGraph() {
                     align: 'middle'
                 },
                 smooth: {
-                    type: 'cubicBezier',
-                    forceDirection: 'horizontal',
-                    roundness: 0.4
+                    type: 'continuous'
                 }
             },
             layout: {
-                hierarchical: {
-                    enabled: true,
-                    direction: 'LR',
-                    sortMethod: 'directed',
-                    levelSeparation: 200,
-                    nodeSpacing: 150
-                }
+                improvedLayout: true,
+                randomSeed: 42  // Consistent layout across reloads
             },
             physics: {
-                enabled: false
+                enabled: true,
+                stabilization: {
+                    enabled: true,
+                    iterations: 200,
+                    updateInterval: 25
+                },
+                barnesHut: {
+                    gravitationalConstant: -8000,
+                    centralGravity: 0.3,
+                    springLength: 250,
+                    springConstant: 0.04,
+                    damping: 0.09,
+                    avoidOverlap: 0.5
+                }
             },
             interaction: {
                 hover: true,
-                tooltipDelay: 200
+                tooltipDelay: 200,
+                dragNodes: true,
+                dragView: true,
+                zoomView: true
             }
         };
 

@@ -102,7 +102,7 @@ def graph():
 
         firestore_client = get_firestore_client()
         papers = firestore_client.get_all_papers()
-        relationships = firestore_client.get_all_relationships()
+        relationships = firestore_client.get_all_relationships(limit=1000)  # Increase limit to handle all relationships
 
         # Transform to vis.js format
         nodes = []
@@ -176,7 +176,7 @@ def relationships():
         logger.info("[Graph Service] Relationships request")
 
         firestore_client = get_firestore_client()
-        rels = firestore_client.get_all_relationships()
+        rels = firestore_client.get_all_relationships(limit=1000)  # Increase limit to handle all relationships
 
         logger.info(f"[Graph Service] Found {len(rels)} relationships")
         return jsonify({
@@ -214,7 +214,7 @@ def paper_neighbors(paper_id: str):
         logger.info(f"[Graph Service] Neighbors request for paper: {paper_id}")
 
         firestore_client = get_firestore_client()
-        relationships = firestore_client.get_all_relationships()
+        relationships = firestore_client.get_all_relationships(limit=1000)  # Increase limit to handle all relationships
         papers = firestore_client.get_all_papers()
 
         # Build paper lookup

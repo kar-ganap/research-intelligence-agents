@@ -155,6 +155,37 @@ class GraphQueryTool:
                             'confidence': rel_data.get('confidence', 0.0)
                         })
 
+        else:
+            # No paper or topic specified - return ALL contradictions
+            relationships = list(self.firestore_client.db.collection('relationships')
+                                .where('relationship_type', '==', 'contradicts')
+                                .stream())
+
+            for rel in relationships:
+                rel_data = rel.to_dict()
+                source_id = rel_data.get('source_paper_id')
+                target_id = rel_data.get('target_paper_id')
+
+                # Get both papers
+                source_paper = self.firestore_client.get_paper(source_id)
+                target_paper = self.firestore_client.get_paper(target_id)
+
+                if source_paper and target_paper:
+                    contradictions.append({
+                        'paper_1': {
+                            'paper_id': source_id,
+                            'title': source_paper.get('title', 'Unknown'),
+                            'authors': source_paper.get('authors', [])
+                        },
+                        'paper_2': {
+                            'paper_id': target_id,
+                            'title': target_paper.get('title', 'Unknown'),
+                            'authors': target_paper.get('authors', [])
+                        },
+                        'description': rel_data.get('description', ''),
+                        'confidence': rel_data.get('confidence', 0.0)
+                    })
+
         logger.info(f"Found {len(contradictions)} contradictions")
 
         return {

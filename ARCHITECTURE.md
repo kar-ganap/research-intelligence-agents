@@ -292,7 +292,7 @@ sequenceDiagram
 ### AI Agents (Google ADK)
 
 #### 1. QA Agent
-- **Model**: gemini-2.0-flash-exp
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Answer questions about research corpus
 - **Input**: Question + relevant paper context
 - **Output**: Answer + citations + confidence score
@@ -302,7 +302,7 @@ sequenceDiagram
   - Confidence scoring
 
 #### 2. Summary Agent
-- **Model**: gemini-2.0-flash-exp
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Extract and summarize paper content
 - **Input**: PDF text or arXiv abstract
 - **Output**:
@@ -316,7 +316,7 @@ sequenceDiagram
   - Preview generation
 
 #### 3. Relationship Agent
-- **Model**: gemini-2.5-pro
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Detect relationships between papers
 - **Input**: Two paper summaries/abstracts
 - **Output**:
@@ -329,7 +329,7 @@ sequenceDiagram
   - **Extends**: Builds upon or expands findings
 
 #### 4. Confidence Agent
-- **Model**: gemini-2.0-flash-exp
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Score confidence in detected relationships
 - **Input**: Two papers + detected relationship + evidence
 - **Output**: Confidence score (0.0 - 1.0)
@@ -340,7 +340,7 @@ sequenceDiagram
   - Author overlap
 
 #### 5. Alert Matching Agent
-- **Model**: gemini-2.0-flash-exp
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Match papers to user-defined watch rules
 - **Input**: Paper metadata + watch rule criteria
 - **Output**: Match score + explanation
@@ -558,8 +558,9 @@ graph LR
    - Reduces build time from 15-20 min to 1-2 min
 
 2. **Model Selection**:
-   - gemini-2.0-flash for most tasks (cost-effective)
-   - gemini-2.5-pro only for complex relationship detection
+   - gemini-2.5-pro for all agents (configurable via DEFAULT_MODEL in .env)
+   - Provides best quality results for hackathon demo
+   - Can be changed to gemini-2.0-flash for cost optimization in production
 
 3. **Batch Processing**:
    - Relationship detection runs periodically, not per-paper

@@ -8,6 +8,7 @@ Identifies supports, contradicts, and extends relationships.
 import asyncio
 import uuid
 from typing import Dict, List
+from datetime import datetime
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
@@ -18,6 +19,44 @@ from src.utils.config import config, APP_NAME, DEFAULT_USER_ID
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def parse_date(date_str: str) -> datetime:
+    """Parse arXiv date string to datetime."""
+    if not date_str:
+        return None
+
+    try:
+        # Try ISO format first
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except:
+        try:
+            # Try common formats
+            for fmt in ['%Y-%m-%d', '%Y-%m-%dT%H:%M:%S', '%Y']:
+                try:
+                    return datetime.strptime(date_str, fmt)
+                except:
+                    continue
+        except:
+            pass
+    return None
+
+
+def get_paper_date(paper: Dict) -> datetime:
+    """Extract publication date from paper."""
+    # Try 'published' field first
+    if 'published' in paper and paper['published']:
+        date = parse_date(paper['published'])
+        if date:
+            return date
+
+    # Try 'updated' field
+    if 'updated' in paper and paper['updated']:
+        date = parse_date(paper['updated'])
+        if date:
+            return date
+
+    return None
 
 
 class RelationshipAgent(BaseResearchAgent):
@@ -41,49 +80,59 @@ class RelationshipAgent(BaseResearchAgent):
         instruction = """
 You are an expert at analyzing research papers and identifying relationships between them.
 
-Given two papers (Paper A and Paper B), determine if there is a relationship:
+Given two papers (Paper A and Paper B), determine if there is a meaningful relationship.
 
 Relationship Types:
-1. supports: Paper A has similar findings to Paper B, provides corroborating evidence
-   - Example: Both papers show improvements using similar methods
-   - Example: Papers validate each other's claims
+1. **extends**: Paper A builds upon or extends Paper B's work
+   - Paper A uses Paper B's method and adds improvements
+   - Paper A applies Paper B's technique to a new domain
+   - Paper A addresses limitations mentioned in Paper B
 
-2. contradicts: Paper A has conflicting findings with Paper B
-   - Example: Paper A claims method works, Paper B shows negative results
-   - Example: Different conclusions about effectiveness
+2. **supports**: Paper A has similar findings to Paper B
+   - Both papers show improvements using similar methods
+   - Papers validate each other's claims with independent evidence
+   - Papers reach similar conclusions through different approaches
 
-3. extends: Paper A builds upon or extends Paper B's work
-   - Example: Paper A uses Paper B's method and adds improvements
-   - Example: Paper A applies Paper B's technique to a new domain
+3. **contradicts**: Paper A has conflicting findings with Paper B
+   - Paper A claims method works, Paper B shows negative results
+   - Different conclusions about effectiveness or applicability
+   - NOTE: Only use if conflict is clear and direct
 
-4. none: Papers are unrelated or relationship is too weak
+4. **none**: Papers are unrelated or relationship is too weak
 
 Your task:
-1. Read the key findings from both papers
-2. Identify the relationship type (supports/contradicts/extends/none)
-3. Assign a confidence score (0.0-1.0)
-4. Provide brief evidence (1-2 sentences)
+1. Read the abstracts and key findings from both papers carefully
+2. Look for meaningful connections - even moderate-strength relationships are valuable
+3. Identify the relationship type (extends/supports/contradicts/none)
+4. Assign a confidence score (0.0-1.0)
+5. Provide brief evidence (1-2 sentences)
 
 Output Format (JSON):
 {
-  "relationship_type": "supports",
-  "confidence": 0.85,
-  "evidence": "Both papers demonstrate improvements in translation quality using attention mechanisms."
+  "relationship_type": "extends",
+  "confidence": 0.75,
+  "evidence": "Paper A extends Paper B's attention mechanism by adding sparse patterns for efficiency."
 }
 
 Guidelines:
-- Only assign a relationship if confidence > 0.6
-- If uncertain or papers are unrelated, use "none"
-- Be conservative with "contradicts" - only use for clear conflicts
-- "supports" is most common for papers in similar areas
+- Focus on finding real relationships - weak relationships are OK if they're accurate
 - Evidence should reference specific findings from both papers
+- For "extends": Look for citations, method reuse, or explicit building-upon
+- For "supports": Look for independent validation, similar results
+- For "contradicts": Be conservative - only use for clear conflicts
 """
+
+        # Create generation config with temperature
+        gen_config = types.GenerateContentConfig(
+            temperature=config.agent.temperature
+        )
 
         return LlmAgent(
             name="RelationshipAgent",
             model=self.model,
             description="Detects relationships between research papers",
-            instruction=instruction
+            instruction=instruction,
+            generate_content_config=gen_config
         )
 
     def detect_relationship(self, paper_a: Dict, paper_b: Dict) -> Dict:
@@ -104,16 +153,22 @@ Guidelines:
         logger.info(f"Detecting relationship: '{paper_a.get('title', 'Unknown')[:50]}...' vs '{paper_b.get('title', 'Unknown')[:50]}...'")
 
         # Format papers for comparison
+        # Include abstract if available, otherwise fall back to key_finding
+        paper_a_abstract = paper_a.get('abstract', paper_a.get('key_finding', 'Unknown'))
+        paper_b_abstract = paper_b.get('abstract', paper_b.get('key_finding', 'Unknown'))
+
         prompt = f"""Compare these two papers and identify their relationship:
 
 Paper A:
 Title: {paper_a.get('title', 'Unknown')}
 Authors: {', '.join(paper_a.get('authors', [])[:3])}
+Abstract: {paper_a_abstract}
 Key Finding: {paper_a.get('key_finding', 'Unknown')}
 
 Paper B:
 Title: {paper_b.get('title', 'Unknown')}
 Authors: {', '.join(paper_b.get('authors', [])[:3])}
+Abstract: {paper_b_abstract}
 Key Finding: {paper_b.get('key_finding', 'Unknown')}
 
 Analyze the relationship between Paper A and Paper B."""
@@ -224,11 +279,27 @@ Analyze the relationship between Paper A and Paper B."""
         logger.info(f"Detecting relationships for new paper against {len(existing_papers)} existing papers")
 
         relationships = []
+        new_paper_date = get_paper_date(new_paper)
+        temporal_violations = 0
 
         for existing_paper in existing_papers:
             # Skip if same paper
             if new_paper.get('paper_id') == existing_paper.get('paper_id'):
                 continue
+
+            # Check temporal constraint: new_paper must be published after or at same time as existing_paper
+            # for directional relationships (extends, supports, contradicts)
+            existing_paper_date = get_paper_date(existing_paper)
+
+            if new_paper_date and existing_paper_date:
+                if new_paper_date < existing_paper_date:
+                    # New paper is older than existing paper - skip relationship detection
+                    temporal_violations += 1
+                    logger.debug(f"Skipping temporal violation: {new_paper.get('title', 'Unknown')[:50]}... "
+                               f"({new_paper_date.strftime('%Y-%m-%d')}) -> "
+                               f"{existing_paper.get('title', 'Unknown')[:50]}... "
+                               f"({existing_paper_date.strftime('%Y-%m-%d')})")
+                    continue
 
             # Detect relationship
             result = self.detect_relationship(new_paper, existing_paper)
@@ -245,6 +316,103 @@ Analyze the relationship between Paper A and Paper B."""
 
                 logger.info(f"Found relationship: {result['relationship_type']} (confidence: {result['confidence']:.2f})")
 
+        if temporal_violations > 0:
+            logger.info(f"Skipped {temporal_violations} papers due to temporal constraints")
+
         logger.info(f"Found {len(relationships)} relationships above threshold")
+
+        return relationships
+
+    def detect_relationships_batch_filtered(
+        self,
+        new_paper: Dict,
+        existing_papers: List[Dict],
+        embeddings_cache: Dict[str, List[float]],
+        top_k: int = 20,
+        min_similarity: float = 0.6
+    ) -> List[Dict]:
+        """
+        Detect relationships using embedding-based pre-filtering (Option 1)
+        and selective confidence thresholds (Option 5).
+
+        Args:
+            new_paper: New paper to compare
+            existing_papers: List of existing papers in corpus
+            embeddings_cache: Dict mapping paper_id -> embedding vector
+            top_k: Maximum number of similar papers to compare (default 20)
+            min_similarity: Minimum embedding similarity threshold (default 0.6)
+
+        Returns:
+            List of relationships with paper IDs, metadata, and similarity scores
+        """
+        from src.utils.embeddings import find_similar_papers
+
+        logger.info(f"Detecting relationships for new paper with embedding pre-filtering")
+
+        # Option 1: Filter to semantically similar papers first
+        similar_papers = find_similar_papers(
+            new_paper,
+            existing_papers,
+            embeddings_cache,
+            top_k=top_k,
+            min_similarity=min_similarity
+        )
+
+        logger.info(f"Filtered from {len(existing_papers)} to {len(similar_papers)} similar papers "
+                   f"(reduction: {(1 - len(similar_papers)/len(existing_papers))*100:.1f}%)")
+
+        relationships = []
+        new_paper_date = get_paper_date(new_paper)
+        temporal_violations = 0
+
+        # Option 5: Selective thresholds by relationship type
+        thresholds = {
+            'contradicts': 0.7,  # High bar - need to be sure about conflicts
+            'extends': 0.5,      # Medium bar - building upon is common
+            'supports': 0.5,     # Medium bar - similar findings are common
+        }
+
+        for similar_paper, sim_score in similar_papers:
+            # Check temporal constraint
+            existing_paper_date = get_paper_date(similar_paper)
+
+            if new_paper_date and existing_paper_date:
+                if new_paper_date < existing_paper_date:
+                    temporal_violations += 1
+                    logger.debug(f"Skipping temporal violation: {new_paper.get('title', 'Unknown')[:50]}... "
+                               f"({new_paper_date.strftime('%Y-%m-%d')}) -> "
+                               f"{similar_paper.get('title', 'Unknown')[:50]}... "
+                               f"({existing_paper_date.strftime('%Y-%m-%d')})")
+                    continue
+
+            # Detect relationship
+            result = self.detect_relationship(new_paper, similar_paper)
+
+            rel_type = result['relationship_type']
+
+            # Skip "none" relationships
+            if rel_type == 'none':
+                continue
+
+            # Apply selective threshold based on relationship type
+            min_conf = thresholds.get(rel_type, 0.6)
+
+            if result['confidence'] >= min_conf:
+                relationships.append({
+                    'source_paper_id': new_paper.get('paper_id'),
+                    'target_paper_id': similar_paper.get('paper_id'),
+                    'relationship_type': rel_type,
+                    'confidence': result['confidence'],
+                    'evidence': result['evidence'],
+                    'similarity_score': sim_score  # Store embedding similarity for analysis
+                })
+
+                logger.info(f"Found relationship: {rel_type} (confidence: {result['confidence']:.2f}, "
+                          f"similarity: {sim_score:.2f})")
+
+        if temporal_violations > 0:
+            logger.info(f"Skipped {temporal_violations} papers due to temporal constraints")
+
+        logger.info(f"Found {len(relationships)} relationships with filtered approach")
 
         return relationships

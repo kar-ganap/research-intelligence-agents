@@ -35,7 +35,7 @@ def fetch_arxiv_metadata(arxiv_id):
         arxiv_id: arXiv ID (e.g., "1706.03762")
 
     Returns:
-        dict with categories, primary_category, published, updated
+        dict with categories, primary_category, published, updated, abstract
     """
     try:
         search = arxiv.Search(id_list=[arxiv_id])
@@ -45,7 +45,8 @@ def fetch_arxiv_metadata(arxiv_id):
             'categories': result.categories,
             'primary_category': result.primary_category,
             'published': result.published.isoformat(),
-            'updated': result.updated.isoformat() if result.updated else None
+            'updated': result.updated.isoformat() if result.updated else None,
+            'abstract': result.summary.strip()
         }
     except Exception as e:
         logger.error(f"Failed to fetch metadata for {arxiv_id}: {e}")
@@ -74,8 +75,8 @@ def backfill_metadata():
         paper_id = doc.id
         arxiv_id = paper.get('arxiv_id')
 
-        # Check if already has metadata
-        if paper.get('primary_category') and paper.get('published'):
+        # Check if already has metadata (including abstract)
+        if paper.get('primary_category') and paper.get('published') and paper.get('abstract'):
             logger.info(f"Skipping {arxiv_id} - already has metadata")
             skipped_count += 1
             continue
