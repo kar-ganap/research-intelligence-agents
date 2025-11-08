@@ -1,0 +1,72 @@
+# .gcloudignore - files to exclude from Cloud Run deployment
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Data and credentials
+data/
+*.pdf
+credentials.json
+.env
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# UV lock file
+uv.lock
+
+# Tests
+tests/
+scripts/test_*.py
+scripts/debug_*.py
+scripts/add_*.py
+scripts/list_*.py
+scripts/reingest_*.py
+scripts/download_*.py
+
+# Deployment scripts (not needed in container)
+scripts/deploy_*.sh
+scripts/setup_*.sh
+
+# Planning docs
+FUTURE_WORK.md
+PHASE_*.md
+DEPLOYMENT.md
+
+# Monitoring
+monitoring/
+infra/
+
+# Misc
+.DS_Store

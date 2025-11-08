@@ -1,0 +1,141 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+PHASE 2.3: CONFIDENCE SCORING - TEST
+======================================================================
+
+======================================================================
+RUNNING CONFIDENCE TESTS
+======================================================================
+
+Test 1/5: High Confidence - Factual Author Question
+  Question: Who are the authors of the Transformer paper?
+  Expected: high confidence
+
+  Answer: The authors of the Transformer paper are Ashish Vaswani, Noam Shazeer, and Niki Parmar [Attention Is...
+  Citations: 1
+
+  Confidence Score: 0.90
+    Evidence Strength: 1.00
+    Consistency: 1.00
+    Coverage: 1.00
+    Source Quality: 0.70
+  Reasoning: The answer provides a direct quote and authors from the primary source, 'Attention Is All You Need.' Only one relevant paper was found.
+
+  ✅ PASS: Score 0.90 meets expectation (>= 0.75)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 2/5: High Confidence - Explicit Performance Metric
+  Question: What BLEU score did the Transformer achieve on WMT 2014 English-to-German?
+  Expected: high confidence
+
+  Answer: I don't have enough information in the provided papers to answer this question.
+...
+  Citations: 0
+
+  Confidence Score: 0.14
+    Evidence Strength: 0.00
+    Consistency: 1.00
+    Coverage: 0.00
+    Source Quality: 0.40
+  Reasoning: The answer explicitly states that it doesn't have enough information. The source quality is low since only one paper is provided and it doesn't contain the answer.
+
+  ❌ FAIL: Score 0.14 does not meet expectation (>= 0.7)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 3/5: Medium Confidence - Comparison Question
+  Question: How does BERT compare to GPT-3 in few-shot learning?
+  Expected: medium confidence
+
+  Answer: GPT-3, a large autoregressive language model with 175 billion parameters, demonstrates strong task-a...
+  Citations: 1
+
+  Confidence Score: 0.10
+    Evidence Strength: 0.00
+    Consistency: 1.00
+    Coverage: 0.00
+    Source Quality: 0.40
+  Reasoning: The answer states that it doesn't have enough information to answer the question, therefore, the evidence strength is 0. The single paper provided is somewhat relevant, but does not provide enough information to answer the question.
+  ⚠️  Warning: The answer explicitly states that it doesn't have enough information.
+
+  ❌ FAIL: Score 0.10 does not meet expectation (0.35 - 0.75)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 4/5: Low Confidence - Out of Domain Question
+  Question: What is the best recipe for chocolate cake?
+  Expected: low confidence
+
+  ⚠️  WARNING: No confidence data returned
+
+Test 5/5: Low Confidence - Partial Domain Overlap
+  Question: What are the ethical implications of large language models?
+  Expected: low-medium confidence
+
+  Answer: I don't have enough information in the provided papers to answer this question....
+  Citations: 0
+
+  Confidence Score: 0.10
+    Evidence Strength: 0.00
+    Consistency: 1.00
+    Coverage: 0.00
+    Source Quality: 0.00
+  Reasoning: The answer explicitly states that it does not have enough information. Both papers are irrelevant to the question of the ethical implications of large language models.
+  ⚠️  Warning: The answer is based on insufficient information.
+
+  ❌ FAIL: Score 0.10 does not meet expectation (0.25 - 0.65)
+
+======================================================================
+SUMMARY
+======================================================================
+
+Tests run: 5
+Passed: 1/5 (20.0%)
+
+1. ✅ PASS: High Confidence - Factual Author Question
+   Expected: high, Got: 0.90
+
+2. ❌ FAIL: High Confidence - Explicit Performance Metric
+   Expected: high, Got: 0.14
+   Reason: The answer explicitly states that it doesn't have enough information. The source quality is low sinc
+
+3. ❌ FAIL: Medium Confidence - Comparison Question
+   Expected: medium, Got: 0.10
+   Reason: The answer states that it doesn't have enough information to answer the question, therefore, the evi
+
+4. ❌ FAIL: Low Confidence - Out of Domain Question
+   Expected: N/A, Got: 0.00
+   Reason: No confidence data
+
+5. ❌ FAIL: Low Confidence - Partial Domain Overlap
+   Expected: low-medium, Got: 0.10
+   Reason: The answer explicitly states that it does not have enough information. Both papers are irrelevant to
+
+======================================================================
+PHASE 2.3 GO/NO-GO DECISION
+======================================================================
+
+❌ FAIL: ConfidenceAgent returns scores 0-1
+❌ FAIL: High confidence scenarios pass
+❌ FAIL: Low confidence scenarios pass
+❌ FAIL: Overall accuracy ≥60%
+
+======================================================================
+❌ NO-GO: Phase 2.3 needs refinement
+======================================================================

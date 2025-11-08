@@ -1,0 +1,27 @@
+# Base Docker image with pre-installed dependencies
+# Build this once: gcloud builds submit -f Dockerfile.base --tag gcr.io/research-intel-agents/base:latest --timeout=20m
+# Then all service/job/worker images will build much faster
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install all Python dependencies
+# This is the slow step (10+ minutes) that we want to cache
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir arxiv
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+
+# This base image will be reused by all services/jobs/workers
+# They will add: COPY src/ ./src/ and CMD [specific service]

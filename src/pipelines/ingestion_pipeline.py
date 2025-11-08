@@ -9,14 +9,27 @@ Orchestrates the paper ingestion process:
 Phase 1 approach: Simple Python orchestration for reliability and clarity.
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import logging
 from pathlib import Path
 import time
+import json
+import os
+
+from google.cloud import pubsub_v1
 
 from src.tools.pdf_reader import read_pdf
 from src.agents.ingestion.entity_agent import EntityAgent
 from src.agents.ingestion.indexer_agent import IndexerAgent
+from src.agents.ingestion.relationship_agent import RelationshipAgent
+from src.tools.matching import (
+    match_keyword_rule,
+    match_claim_rule,
+    match_relationship_rule,
+    match_author_rule,
+    match_template_rule,
+    ClaimMatcher
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,24 +42,58 @@ class IngestionPipeline:
     Explicitly passes data between components for clarity.
     """
 
-    def __init__(self, project_id: str = None):
+    def __init__(
+        self,
+        project_id: str = None,
+        enable_relationships: bool = False,
+        enable_alerting: bool = False,
+        enable_pubsub: bool = True
+    ):
         """
         Initialize the ingestion pipeline.
 
         Args:
             project_id: GCP project ID for Firestore
+            enable_relationships: Whether to detect relationships (Phase 2.1 feature)
+            enable_alerting: Whether to check watch rules and create alerts (Phase 2.2 feature)
+            enable_pubsub: Whether to publish to Pub/Sub after ingestion (triggers graph updater)
         """
         self.entity_agent = EntityAgent()
         self.indexer_agent = IndexerAgent(project_id=project_id)
-        logger.info("IngestionPipeline initialized")
+        self.enable_relationships = enable_relationships
+        self.enable_alerting = enable_alerting
+        self.enable_pubsub = enable_pubsub
+        self.project_id = project_id or os.environ.get('GOOGLE_CLOUD_PROJECT')
 
-    def ingest_paper(self, pdf_path: str, arxiv_id: str = "") -> Dict:
+        if enable_relationships:
+            self.relationship_agent = RelationshipAgent()
+            logger.info("IngestionPipeline initialized with relationship detection")
+        else:
+            self.relationship_agent = None
+
+        if enable_alerting:
+            self.claim_matcher = ClaimMatcher()
+            logger.info("IngestionPipeline initialized with proactive alerting")
+        else:
+            self.claim_matcher = None
+
+        if enable_pubsub:
+            self.pubsub_publisher = pubsub_v1.PublisherClient()
+            logger.info("IngestionPipeline initialized with Pub/Sub publishing")
+        else:
+            self.pubsub_publisher = None
+
+        if not enable_relationships and not enable_alerting:
+            logger.info("IngestionPipeline initialized (relationships and alerting disabled)")
+
+    def ingest_paper(self, pdf_path: str, arxiv_id: str = "", metadata: Dict = None) -> Dict:
         """
         Ingest a single paper through the full pipeline.
 
         Args:
             pdf_path: Path to the PDF file
             arxiv_id: arXiv ID (optional, for metadata)
+            metadata: Additional metadata (categories, primary_category, published, updated)
 
         Returns:
             Dictionary with:
@@ -56,6 +103,8 @@ class IngestionPipeline:
                 - duration: float (seconds)
                 - error: str (if failed)
         """
+        if metadata is None:
+            metadata = {}
         start_time = time.time()
 
         result = {
@@ -114,7 +163,8 @@ class IngestionPipeline:
             index_result = self.indexer_agent.index(
                 entities=entities,
                 pdf_path=pdf_path,
-                arxiv_id=arxiv_id
+                arxiv_id=arxiv_id,
+                metadata=metadata
             )
 
             result["steps"]["indexing"] = {
@@ -129,11 +179,144 @@ class IngestionPipeline:
                 result["duration"] = time.time() - start_time
                 return result
 
+            # Step 4 (Optional): Detect relationships
+            if self.enable_relationships and self.relationship_agent:
+                logger.info("Step 4/4: Detecting relationships")
+                step_start = time.time()
+
+                try:
+                    # Get all existing papers from Firestore
+                    existing_papers = self.indexer_agent.firestore_client.get_all_papers()
+
+                    # Create paper object for new paper
+                    new_paper = {
+                        'paper_id': index_result['paper_id'],
+                        'title': entities.get('title', ''),
+                        'authors': entities.get('authors', []),
+                        'key_finding': entities.get('key_finding', '')
+                    }
+
+                    # Detect relationships
+                    relationships = self.relationship_agent.detect_relationships_batch(
+                        new_paper=new_paper,
+                        existing_papers=existing_papers,
+                        min_confidence=0.6
+                    )
+
+                    # Store relationships in Firestore
+                    relationship_ids = []
+                    for rel in relationships:
+                        rel_id = self.indexer_agent.firestore_client.store_relationship(rel)
+                        relationship_ids.append(rel_id)
+
+                    result["steps"]["relationship_detection"] = {
+                        "success": True,
+                        "relationships_found": len(relationships),
+                        "relationship_ids": relationship_ids,
+                        "duration": time.time() - step_start
+                    }
+
+                    logger.info(f"Found {len(relationships)} relationships")
+
+                except Exception as e:
+                    logger.warning(f"Relationship detection failed (non-blocking): {e}")
+                    result["steps"]["relationship_detection"] = {
+                        "success": False,
+                        "error": str(e),
+                        "duration": time.time() - step_start
+                    }
+
+            # Step 5 (Optional): Check watch rules and create alerts
+            if self.enable_alerting and self.claim_matcher:
+                logger.info("Step 5/5: Checking watch rules")
+                step_start = time.time()
+
+                try:
+                    # Get all active watch rules
+                    active_rules = self.indexer_agent.firestore_client.get_all_active_rules()
+
+                    # Create paper object for matching
+                    paper_for_matching = {
+                        'paper_id': index_result['paper_id'],
+                        'title': entities.get('title', ''),
+                        'authors': entities.get('authors', []),
+                        'key_finding': entities.get('key_finding', '')
+                    }
+
+                    # Check each rule
+                    alerts_created = []
+                    for rule in active_rules:
+                        match_result = self._match_paper_against_rule(
+                            paper_for_matching,
+                            rule
+                        )
+
+                        if match_result:
+                            # Create alert
+                            alert_data = {
+                                "user_id": rule.get("user_id", ""),
+                                "rule_id": rule.get("rule_id", ""),
+                                "paper_id": index_result["paper_id"],
+                                "match_score": match_result["match_score"],
+                                "match_explanation": match_result["match_explanation"],
+                                "paper_title": entities.get("title", ""),
+                                "paper_authors": entities.get("authors", []),
+                                "status": "pending"
+                            }
+
+                            alert_id = self.indexer_agent.firestore_client.create_alert(alert_data)
+                            alerts_created.append(alert_id)
+
+                            logger.info(
+                                f"Created alert {alert_id} for rule {rule.get('name', 'unnamed')} "
+                                f"(score: {match_result['match_score']:.2f})"
+                            )
+
+                    result["steps"]["alerting"] = {
+                        "success": True,
+                        "rules_checked": len(active_rules),
+                        "alerts_created": len(alerts_created),
+                        "alert_ids": alerts_created,
+                        "duration": time.time() - step_start
+                    }
+
+                    logger.info(f"Created {len(alerts_created)} alerts from {len(active_rules)} active rules")
+
+                except Exception as e:
+                    logger.warning(f"Alerting failed (non-blocking): {e}")
+                    result["steps"]["alerting"] = {
+                        "success": False,
+                        "error": str(e),
+                        "duration": time.time() - step_start
+                    }
+
             # All steps successful
             result["success"] = True
             result["paper_id"] = index_result["paper_id"]
             result["message"] = "Paper ingested successfully"
             result["duration"] = time.time() - start_time
+
+            # Publish to Pub/Sub to trigger graph updater
+            if self.enable_pubsub and self.pubsub_publisher and self.project_id:
+                try:
+                    topic_path = self.pubsub_publisher.topic_path(self.project_id, 'docs.ready')
+                    message_data = {
+                        'paper_id': result['paper_id'],
+                        'title': entities.get('title', ''),
+                        'status': 'ingested'
+                    }
+
+                    future = self.pubsub_publisher.publish(
+                        topic_path,
+                        json.dumps(message_data).encode('utf-8')
+                    )
+                    message_id = future.result()
+
+                    logger.info(f"Published to docs.ready topic (message_id: {message_id})")
+                    result["pubsub_message_id"] = message_id
+
+                except Exception as e:
+                    logger.warning(f"Failed to publish to Pub/Sub (non-blocking): {e}")
 
             logger.info(
                 f"✅ Successfully ingested paper: {result['paper_id']} "
@@ -209,6 +392,51 @@ class IngestionPipeline:
         )
 
         return summary
+
+    def _match_paper_against_rule(self, paper: Dict, rule: Dict) -> Optional[Dict]:
+        """
+        Match a paper against a single watch rule.
+
+        Args:
+            paper: Paper data with title, authors, key_finding
+            rule: Watch rule to match against
+
+        Returns:
+            Match result dict or None if no match:
+            {
+                'match_score': float,
+                'match_explanation': str
+            }
+        """
+        rule_type = rule.get("rule_type", "keyword")
+
+        try:
+            if rule_type == "keyword":
+                return match_keyword_rule(paper, rule)
+
+            elif rule_type == "claim":
+                return match_claim_rule(paper, rule, self.claim_matcher)
+
+            elif rule_type == "relationship":
+                if self.relationship_agent:
+                    return match_relationship_rule(paper, rule, self.relationship_agent)
+                else:
+                    logger.warning("Relationship rule requires enable_relationships=True")
+                    return None
+
+            elif rule_type == "author":
+                return match_author_rule(paper, rule)
+
+            elif rule_type == "template":
+                return match_template_rule(paper, rule, self.claim_matcher)
+
+            else:
+                logger.warning(f"Unknown rule type: {rule_type}")
+                return None
+
+        except Exception as e:
+            logger.warning(f"Error matching rule {rule.get('rule_id', 'unknown')}: {e}")
+            return None
 
     def get_pipeline_status(self) -> Dict:
         """

@@ -1,0 +1,352 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+COMPREHENSIVE RELATIONSHIP DETECTION TEST - PHASE 2.1
+======================================================================
+
+Testing 20 relationship pairs
+  - supports: 5 cases
+  - contradicts: 5 cases
+  - extends: 5 cases
+  - none (unrelated): 5 cases
+
+Test 1/20: SUPPORTS
+----------------------------------------------------------------------
+Paper A: Attention Is All You Need...
+Paper B: Transformers for Machine Translation...
+Reason: Both papers show Transformer achieves high BLEU scores on translation
+
+Expected: supports
+Detected: supports (confidence: 0.90)
+Evidence: Both papers highlight the effectiveness of Transformer models for machine translation, with Paper B's findings corroborating Paper A's achievement of high BLEU scores on WMT benchmarks.
+
+✅ CORRECT
+
+Test 2/20: SUPPORTS
+----------------------------------------------------------------------
+Paper A: Deep Residual Learning for Image Recognition...
+Paper B: ResNet Architectures for Computer Vision...
+Reason: Both papers validate ResNet effectiveness with similar ImageNet accuracy
+
+Expected: supports
+Detected: supports (confidence: 0.90)
+Evidence: Both papers find that residual connections lead to improved training and achieve similar top-1 accuracy on ImageNet (78.5% and 77-79% respectively), suggesting corroborating evidence for the effectiveness of ResNet architectures.
+
+✅ CORRECT
+
+Test 3/20: SUPPORTS
+----------------------------------------------------------------------
+Paper A: BERT: Pre-training of Deep Bidirectional Transformers...
+Paper B: RoBERTa: A Robustly Optimized BERT Approach...
+Reason: Both papers show BERT-style pre-training works well, similar SQuAD scores
+
+Expected: supports
+Detected: extends (confidence: 0.90)
+Evidence: RoBERTa builds upon the BERT model and pre-training approach, demonstrating further improvements in performance on NLP tasks like SQuAD.
+
+❌ INCORRECT
+   Wrong type: expected supports, got extends
+
+Test 4/20: SUPPORTS
+----------------------------------------------------------------------
+Paper A: Diffusion Models Beat GANs on Image Synthesis...
+Paper B: Improved Diffusion Probabilistic Models...
+Reason: Both papers report diffusion models achieving FID < 3 on ImageNet
+
+Expected: supports
+Detected: supports (confidence: 0.95)
+Evidence: Both papers highlight the ability of diffusion models to achieve state-of-the-art image synthesis results, with Paper B confirming the findings of Paper A regarding achieving FID scores below 3.0 on ImageNet.
+
+✅ CORRECT
+
+Test 5/20: SUPPORTS
+----------------------------------------------------------------------
+Paper A: Scaling Laws for Neural Language Models...
+Paper B: Chinchilla: Training Compute-Optimal Large Language Mod...
+Reason: Both papers validate scaling laws for LLMs
+
+Expected: supports
+Detected: supports (confidence: 0.95)
+Evidence: Paper B's finding that model performance scales predictably with compute budget validates Paper A's earlier findings on scaling laws for neural language models.
+
+✅ CORRECT
+
+Test 6/20: CONTRADICTS
+----------------------------------------------------------------------
+Paper A: Batch Normalization: Accelerating Deep Network Training...
+Paper B: Group Normalization Shows Batch Norm Limitations...
+Reason: First says BatchNorm always improves accuracy, second finds failure cases
+
+Expected: contradicts
+Detected: contradicts (confidence: 0.90)
+Evidence: Paper A claims batch normalization improves training speed and accuracy, while Paper B identifies limitations of batch normalization, showing it fails with small batch sizes and proposing an alternative.
+
+✅ CORRECT
+
+Test 7/20: CONTRADICTS
+----------------------------------------------------------------------
+Paper A: Dropout: A Simple Way to Prevent Neural Networks from O...
+Paper B: When Does Dropout Hurt Performance?...
+Reason: First claims dropout always helps, second shows it can hurt
+
+Expected: contradicts
+Detected: contradicts (confidence: 0.90)
+Evidence: Paper A finds that dropout improves generalization, while Paper B finds that dropout can hurt performance in certain modern architectures.
+
+✅ CORRECT
+
+Test 8/20: CONTRADICTS
+----------------------------------------------------------------------
+Paper A: Sim-to-Real Transfer with Domain Randomization...
+Paper B: Domain Randomization Failure Cases in Robotics...
+Reason: First reports 90% success, second reports 45% - contradictory results
+
+Expected: contradicts
+Detected: contradicts (confidence: 0.95)
+Evidence: Paper A reports a 90% success rate for sim-to-real transfer using domain randomization, while Paper B reports only a 45% success rate, indicating conflicting results.
+
+✅ CORRECT
+
+Test 9/20: CONTRADICTS
+----------------------------------------------------------------------
+Paper A: Fine-tuning Pre-trained Models Outperforms Training fro...
+Paper B: Training from Scratch Matches Pre-training on Small Dat...
+Reason: First claims fine-tuning always better, second finds cases where it's not
+
+Expected: contradicts
+Detected: contradicts (confidence: 0.90)
+Evidence: Paper A states that fine-tuning pre-trained models outperforms training from scratch across all NLP tasks, while Paper B finds that training from scratch can match or exceed the performance of fine-tuning on smaller datasets, which is in direct contrast with Paper A's claim.
+
+✅ CORRECT
+
+Test 10/20: CONTRADICTS
+----------------------------------------------------------------------
+Paper A: Large Batch Training of Convolutional Networks...
+Paper B: On the Inadequacy of Large Batch Training...
+Reason: First says large batches work with proper tuning, second says they hurt generalization
+
+Expected: contradicts
+Detected: contradicts (confidence: 0.95)
+Evidence: Paper A claims large batch sizes maintain accuracy with proper scaling, while Paper B finds that large batch sizes lead to a significant drop in test accuracy and poor generalization.
+
+✅ CORRECT
+
+Test 11/20: NONE
+----------------------------------------------------------------------
+Paper A: Attention Is All You Need...
+Paper B: MobileNetV2: Inverted Residuals and Linear Bottlenecks...
+Reason: Different domains: NLP translation vs mobile computer vision
+
+Expected: none
+Detected: none (confidence: 0.70)
+Evidence: Paper A focuses on machine translation using the Transformer architecture, while Paper B introduces MobileNetV2 for efficient mobile vision models. They address different problems in different domains.
+
+✅ CORRECT
+
+Test 12/20: NONE
+----------------------------------------------------------------------
+Paper A: Deep Reinforcement Learning for Robotic Manipulation...
+Paper B: BERT: Pre-training of Deep Bidirectional Transformers...
+Reason: Different domains: robotics vs NLP
+
+Expected: none
+Detected: none (confidence: 0.90)
+Evidence: Paper A focuses on deep reinforcement learning for robotic manipulation, while Paper B introduces the BERT model for natural language processing. They belong to different domains with no clear relationship.
+
+✅ CORRECT
+
+Test 13/20: NONE
+----------------------------------------------------------------------
+Paper A: Quantum Computing for Chemistry Simulations...
+Paper B: Diffusion Models for Image Synthesis...
+Reason: Different domains: quantum computing vs computer vision
+
+Expected: none
+Detected: none (confidence: 0.95)
+Evidence: Paper A focuses on quantum computing for chemistry, while Paper B focuses on diffusion models for image synthesis. The topics and methodologies are completely distinct.
+
+✅ CORRECT
+
+Test 14/20: NONE
+----------------------------------------------------------------------
+Paper A: Graph Neural Networks for Social Network Analysis...
+Paper B: Speech Recognition with Convolutional Neural Networks...
+Reason: Different domains: social networks vs speech recognition
+
+Expected: none
+Detected: none (confidence: 0.95)
+Evidence: Paper A focuses on graph neural networks for social network link prediction, while Paper B uses convolutional neural networks for speech recognition; they address different problems with different methods.
+
+✅ CORRECT
+
+Test 15/20: NONE
+----------------------------------------------------------------------
+Paper A: Medical Image Segmentation with U-Net...
+Paper B: Recommender Systems with Matrix Factorization...
+Reason: Different domains: medical imaging vs recommender systems
+
+Expected: none
+Detected: none (confidence: 0.95)
+Evidence: Paper A focuses on medical image segmentation using U-Net, while Paper B discusses recommender systems with matrix factorization; they are unrelated.
+
+✅ CORRECT
+
+Test 16/20: EXTENDS
+----------------------------------------------------------------------
+Paper A: Language Models are Few-Shot Learners...
+Paper B: Attention Is All You Need...
+Reason: GPT-3 builds upon and scales the Transformer architecture
+
+Expected: extends
+Detected: extends (confidence: 0.70)
+Evidence: Paper A uses the Transformer architecture, introduced in Paper B, as the foundation for its large language model. Paper A then builds upon this architecture to achieve few-shot learning capabilities.
+
+✅ CORRECT
+
+Test 17/20: EXTENDS
+----------------------------------------------------------------------
+Paper A: DALL-E 2: Hierarchical Text-Conditional Image Generatio...
+Paper B: Diffusion Models Beat GANs on Image Synthesis...
+Reason: DALL-E 2 extends diffusion models to text-conditional generation
+
+Expected: extends
+Detected: extends (confidence: 0.75)
+Evidence: Paper A uses diffusion models, which Paper B demonstrates are effective for image synthesis, suggesting Paper A builds upon the techniques validated in Paper B.
+
+✅ CORRECT
+
+Test 18/20: EXTENDS
+----------------------------------------------------------------------
+Paper A: MobileNetV2: Inverted Residuals and Linear Bottlenecks...
+Paper B: MobileNets: Efficient Convolutional Neural Networks...
+Reason: MobileNetV2 extends MobileNetV1 with architectural improvements
+
+Expected: extends
+Detected: extends (confidence: 0.90)
+Evidence: MobileNetV2 (Paper A) improves upon MobileNetV1 (Paper B) by introducing inverted residuals, building on the concept of depthwise separable convolutions for efficient CNNs.
+
+✅ CORRECT
+
+Test 19/20: EXTENDS
+----------------------------------------------------------------------
+Paper A: InstructGPT: Training Language Models to Follow Instruc...
+Paper B: Language Models are Few-Shot Learners...
+Reason: InstructGPT extends GPT-3 with instruction following via RLHF
+
+Expected: extends
+Detected: extends (confidence: 0.70)
+Evidence: Paper A builds upon the work in Paper B by utilizing large language models (like GPT-3, the subject of Paper B) and then fine-tuning them using reinforcement learning from human feedback, which enhances the model's ability to follow instructions. Thus, Paper A extends the capabilities of large language models demonstrated in Paper B.
+
+✅ CORRECT
+
+Test 20/20: EXTENDS
+----------------------------------------------------------------------
+Paper A: ViT: An Image is Worth 16x16 Words...
+Paper B: Attention Is All You Need...
+Reason: ViT extends Transformers from NLP to computer vision
+
+Expected: extends
+Detected: extends (confidence: 0.75)
+Evidence: Paper A (ViT) extends the Transformer architecture introduced in Paper B (Attention is All You Need) from machine translation to the image recognition domain, demonstrating its effectiveness beyond NLP tasks.
+
+✅ CORRECT
+
+======================================================================
+SUMMARY BY RELATIONSHIP TYPE
+======================================================================
+
+SUPPORTS:
+  Accuracy: 4/5 (80.0%)
+  Avg confidence: 0.92
+  Failed tests: [3]
+
+CONTRADICTS:
+  Accuracy: 5/5 (100.0%)
+  Avg confidence: 0.92
+
+EXTENDS:
+  Accuracy: 5/5 (100.0%)
+  Avg confidence: 0.76
+
+NONE:
+  Accuracy: 5/5 (100.0%)
+  Avg confidence: 0.89
+
+======================================================================
+OVERALL SUMMARY
+======================================================================
+
+Total tests: 20
+Correct: 19/20 (95.0%)
+
+Wrong relationship type: 1
+Correct type but low confidence: 0
+
+======================================================================
+PHASE 2.1 GO/NO-GO DECISION
+======================================================================
+
+Criteria:
+
+1. Can detect 'supports' relationship (≥60%)
+   Result: 80.0%
+   ✅ PASS
+
+2. Can detect 'contradicts' relationship (≥60%)
+   Result: 100.0%
+   ✅ PASS
+
+3. Can detect 'extends' relationship (≥60%)
+   Result: 100.0%
+   ✅ PASS
+
+4. Can detect 'none' / unrelated (≥60%)
+   Result: 100.0%
+   ✅ PASS
+
+5. Overall accuracy (≥60%)
+   Result: 95.0%
+   ✅ PASS
+
+======================================================================
+✅ GO DECISION: All Phase 2.1 criteria MET
+   Relationship detection is accurate across all types
+======================================================================

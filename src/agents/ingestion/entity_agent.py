@@ -14,7 +14,7 @@ import uuid
 from typing import Dict
 from google.adk.agents import LlmAgent
 from src.agents.base import BaseResearchAgent
-from src.utils.config import APP_NAME, DEFAULT_USER_ID
+from src.utils.config import APP_NAME, DEFAULT_USER_ID, config
 
 
 class EntityAgent(BaseResearchAgent):
@@ -25,7 +25,9 @@ class EntityAgent(BaseResearchAgent):
     Output: Structured JSON with extracted entities
     """
 
-    def __init__(self, model: str = "gemini-2.0-flash-exp"):
+    def __init__(self, model: str = None):
+        if model is None:
+            model = config.agent.default_model
         super().__init__(name="EntityAgent", model=model)
 
     def _create_agent(self) -> LlmAgent:
@@ -38,20 +40,25 @@ Given the text of a research paper, extract the following information:
 
 1. **Title**: The full title of the paper
 2. **Authors**: List of the first 3 authors (or all if less than 3)
-3. **Key Finding**: ONE sentence summarizing the main contribution or finding of the paper
+3. **Key Finding**: A comprehensive summary (2-4 sentences) of the main contribution or finding
 
-IMPORTANT:
-- Be precise and accurate
-- Extract information exactly as it appears in the paper
-- For the key finding, focus on the main contribution, not methodology
-- Return your response as valid JSON
+IMPORTANT for Key Finding:
+- Include the main contribution or innovation
+- Include SPECIFIC performance metrics, scores, or results (e.g., "BLEU score of 28.4", "92% accuracy")
+- Include benchmark names and datasets (e.g., "on WMT 2014 English-to-German", "on ImageNet")
+- Include comparisons to baselines if mentioned (e.g., "outperforming previous state-of-the-art by 5%")
+- Focus on WHAT was achieved and HOW WELL it performed, not just methodology
+- Be precise and extract numbers exactly as they appear
 
 Response format:
 {
   "title": "The title of the paper",
   "authors": ["First Author", "Second Author", "Third Author"],
-  "key_finding": "One sentence describing the main contribution"
+  "key_finding": "2-4 sentences describing the main contribution with specific metrics and performance numbers"
 }
+
+Example of a good key_finding:
+"We propose the Transformer, a novel architecture based solely on attention mechanisms. On WMT 2014 English-to-German translation, our model achieves a BLEU score of 28.4, and on English-to-French it achieves 41.8 BLEU, establishing new state-of-the-art results. The model trains significantly faster than recurrent architectures while achieving better performance."
 
 If you cannot find some information, use empty strings or empty lists.
 """

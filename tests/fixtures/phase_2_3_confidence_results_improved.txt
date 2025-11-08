@@ -1,0 +1,153 @@
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+App name mismatch detected. The runner is configured with app name "research_intelligence_platform", but the root agent was loaded from "/Users/kartikganapathi/Documents/Personal/random_projects/research-intelligence-agents/.venv/lib/python3.11/site-packages/google/adk/agents", which implies app name "agents".
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+======================================================================
+PHASE 2.3: CONFIDENCE SCORING - TEST
+======================================================================
+
+======================================================================
+RUNNING CONFIDENCE TESTS
+======================================================================
+
+Test 1/5: High Confidence - Factual Author Question
+  Question: Who are the authors of the Transformer paper?
+  Expected: high confidence
+
+  Answer: The authors of the paper "Attention Is All You Need" are Ashish Vaswani, Noam Shazeer, and Niki Parm...
+  Citations: 1
+
+  Confidence Score: 1.00
+    Evidence Strength: 1.00
+    Consistency: 1.00
+    Coverage: 1.00
+    Source Quality: 1.00
+  Reasoning: The answer is correct and directly supported by Paper 3, which lists the authors of "Attention Is All You Need". The other papers are irrelevant.
+
+  ✅ PASS: Score 1.00 meets expectation (>= 0.75)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 2/5: High Confidence - Explicit Performance Metric
+  Question: What BLEU score did the Transformer achieve on WMT 2014 English-to-German?
+  Expected: high confidence
+
+  Answer: On the WMT 2014 English-to-German translation task, the Transformer achieves a BLEU score of 28.4 [A...
+  Citations: 1
+
+  Confidence Score: 1.00
+    Evidence Strength: 1.00
+    Consistency: 1.00
+    Coverage: 1.00
+    Source Quality: 1.00
+  Reasoning: The answer is directly supported by Paper 1 (Attention is All You Need), which introduces the Transformer and reports its BLEU score on the WMT 2014 English-to-German translation task. The answer is complete and consistent with the provided evidence.
+
+  ✅ PASS: Score 1.00 meets expectation (>= 0.7)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 3/5: Medium Confidence - Comparison Question
+  Question: How does BERT compare to GPT-3 in few-shot learning?
+  Expected: medium confidence
+
+  Answer: I don't have enough information in the provided papers to answer this question. While both papers in...
+  Citations: 0
+
+  Confidence Score: 0.10
+    Evidence Strength: 0.00
+    Consistency: 1.00
+    Coverage: 0.00
+    Source Quality: 0.00
+  Reasoning: The answer explicitly states that it does not have enough information to answer the question. Therefore, the evidence strength and coverage are both 0. The consistency is high since there are no contradictions.
+
+  ❌ FAIL: Score 0.10 does not meet expectation (0.35 - 0.75)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 4/5: Low Confidence - Out of Domain Question
+  Question: What is the best recipe for chocolate cake?
+  Expected: low confidence
+
+  Answer: I don't have enough information in the provided papers to answer this question.
+...
+  Citations: 0
+
+  Confidence Score: 0.30
+    Evidence Strength: 0.00
+    Consistency: 1.00
+    Coverage: 0.00
+    Source Quality: 0.00
+  Reasoning: The answer explicitly states that it doesn't have enough information. The provided paper is irrelevant to the question.
+
+  ✅ PASS: Score 0.30 meets expectation (< 0.35)
+
+  Waiting 7 seconds to avoid rate limits...
+
+Test 5/5: Low Confidence - Partial Domain Overlap
+  Question: What are the ethical implications of large language models?
+  Expected: low-medium confidence
+
+  Answer: I don't have enough information in the provided papers to answer this question....
+  Citations: 0
+
+  Confidence Score: 0.30
+    Evidence Strength: 0.00
+    Consistency: 1.00
+    Coverage: 0.00
+    Source Quality: 0.00
+  Reasoning: The answer explicitly states that it does not have enough information to answer the question. The papers are about the architecture of LLMs not ethical implications.
+
+  ✅ PASS: Score 0.30 meets expectation (0.25 - 0.65)
+
+======================================================================
+SUMMARY
+======================================================================
+
+Tests run: 5
+Passed: 4/5 (80.0%)
+
+1. ✅ PASS: High Confidence - Factual Author Question
+   Expected: high, Got: 1.00
+
+2. ✅ PASS: High Confidence - Explicit Performance Metric
+   Expected: high, Got: 1.00
+
+3. ❌ FAIL: Medium Confidence - Comparison Question
+   Expected: medium, Got: 0.10
+   Reason: The answer explicitly states that it does not have enough information to answer the question. Theref
+
+4. ✅ PASS: Low Confidence - Out of Domain Question
+   Expected: low, Got: 0.30
+
+5. ✅ PASS: Low Confidence - Partial Domain Overlap
+   Expected: low-medium, Got: 0.30
+
+======================================================================
+PHASE 2.3 GO/NO-GO DECISION
+======================================================================
+
+✅ PASS: ConfidenceAgent returns scores 0-1
+✅ PASS: High confidence scenarios pass
+✅ PASS: Low confidence scenarios pass
+✅ PASS: Overall accuracy ≥60%
+
+======================================================================
+✅ GO DECISION: Phase 2.3 confidence scoring working
+   ConfidenceAgent correctly evaluates evidence quality
+======================================================================

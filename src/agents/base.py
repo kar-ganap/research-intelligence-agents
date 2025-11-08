@@ -7,6 +7,7 @@ Provides common functionality for all agents.
 from google.adk.agents import LlmAgent
 from typing import List, Callable, Optional
 import logging
+from src.utils.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -14,11 +15,11 @@ logger = logging.getLogger(__name__)
 class BaseResearchAgent:
     """Base class for all research intelligence agents"""
 
-    def __init__(self, name: str, model: str = "gemini-2.0-flash-exp"):
+    def __init__(self, name: str, model: str = None):
         self.name = name
-        self.model = model
+        self.model = model or config.agent.default_model
         self._agent: Optional[LlmAgent] = None
-        logger.info(f"Initialized {name}")
+        logger.info(f"Initialized {name} with model {self.model}")
 
     def create_agent(
         self,

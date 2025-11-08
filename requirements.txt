@@ -25,6 +25,7 @@ gunicorn>=21.2.0
 python-dotenv>=1.0.0
 requests>=2.31.0
 pydantic>=2.5.0
+sendgrid>=6.11.0
 
 # Development
 pytest>=7.4.3
