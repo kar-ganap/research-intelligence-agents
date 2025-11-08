@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Intelligence Platform - Demo</title>
+    <script type="text/javascript" src="config.js?v=20251108"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header with stats */
+        header {
+            background: white;
+            padding: 25px 35px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: right;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Watch Rules Section - Prominent */
+        .watch-rules-section {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #1f2937;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-create-rule {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-create-rule:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .rule-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .rule-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .rule-card-basic {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .rule-type-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .rule-description {
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            opacity: 0.95;
+        }
+
+        .rule-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .rule-active {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .match-badge {
+            background: rgba(255,255,255,0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .match-badge.has-matches {
+            background: #fbbf24;
+            color: #78350f;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Knowledge Graph - Hero */
+        .graph-section {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        #graph {
+            width: 100%;
+            height: 550px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .graph-controls select, .graph-controls button {
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .graph-controls select:hover, .graph-controls button:hover {
+            border-color: #667eea;
+        }
+
+        .graph-legend {
+            margin-top: 18px;
+            padding: 18px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .legend-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Q&A and Insights Section */
+        .dual-section {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .question-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .question-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .example-queries {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 2px solid #f3f4f6;
+        }
+
+        .example-queries-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .query-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-example {
+            background: #f9fafb;
+            color: #667eea;
+            border: 2px solid #e5e7eb;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .btn-example:hover {
+            background: #eef2ff;
+            border-color: #667eea;
+            transform: translateX(4px);
+        }
+
+        .answer-box {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            min-height: 120px;
+            display: none;
+            border: 2px solid #e5e7eb;
+        }
+
+        .answer-box.visible {
+            display: block;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        .confidence-high {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .confidence-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .confidence-low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Insights Card */
+        .insights-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .insight-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .insight-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .insight-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        /* Corpus Section - Bottom */
+        .corpus-section {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .papers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .paper-card {
+            padding: 18px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .paper-card:hover {
+            background: #eef2ff;
+            transform: translateX(4px);
+        }
+
+        .paper-title {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .paper-authors {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .paper-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            display: flex;
+            gap: 12px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            border-left: 4px solid #dc2626;
+        }
+
+        /* Upload Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #9ca3af;
+            line-height: 1;
+        }
+
+        .btn-close:hover {
+            color: #4b5563;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 40px 20px;
+            background: #f9fafb;
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Live Stats -->
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>🧠 Research Intelligence Platform</h1>
+                    <p class="subtitle">Multi-agent AI powered by Google ADK • Deployed on Cloud Run</p>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statPapers">127</div>
+                        <div class="stat-label">Papers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statRelationships">342</div>
+                        <div class="stat-label">Relationships</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statAlerts">12</div>
+                        <div class="stat-label">Active Alerts</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Watch Rules Section - Prominent -->
+        <div class="watch-rules-section">
+            <div class="section-header">
+                <h2 class="section-title">🔔 Watch Rules & Alerts</h2>
+                <button class="btn-create-rule" onclick="openCreateRuleModal()">+ Create New Rule</button>
+            </div>
+
+            <div class="rules-grid">
+                <!-- Natural Language Claims (2 examples) -->
+                <div class="rule-card">
+                    <div class="rule-type-badge">Natural Language Claim</div>
+                    <div class="rule-description">
+                        "Papers claiming significant performance improvements on benchmark tasks through novel architectural innovations"
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge has-matches">🔥 3 new matches</span>
+                    </div>
+                </div>
+
+                <div class="rule-card">
+                    <div class="rule-type-badge">Natural Language Claim</div>
+                    <div class="rule-description">
+                        "Research exploring how model scaling affects generalization and sample efficiency in neural networks"
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge has-matches">🔥 1 new match</span>
+                    </div>
+                </div>
+
+                <!-- Keyword and Author (1 each) -->
+                <div class="rule-card rule-card-basic">
+                    <div class="rule-type-badge">Keyword Matching</div>
+                    <div class="rule-description">
+                        Keywords: transformer, attention, self-attention
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge">No new matches</span>
+                    </div>
+                </div>
+
+                <div class="rule-card rule-card-basic">
+                    <div class="rule-type-badge">Author Tracking</div>
+                    <div class="rule-description">
+                        Following publications by: Yann LeCun, Geoffrey Hinton
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge">No new matches</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Graph - Hero -->
+        <div class="graph-section">
+            <div class="section-header">
+                <h2 class="section-title">🕸️ Knowledge Graph</h2>
+            </div>
+
+            <div class="graph-controls">
+                <select id="relationshipFilter" onchange="filterGraph()">
+                    <option value="all">All Relationships</option>
+                    <option value="supports">Supports Only</option>
+                    <option value="extends">Extends Only</option>
+                    <option value="contradicts">Contradicts Only</option>
+                </select>
+                <button onclick="resetGraphView()">📍 Fit to Screen</button>
+                <button onclick="togglePhysics()" id="togglePhysicsBtn">❄️ Freeze Graph</button>
+            </div>
+
+            <div id="graph"></div>
+
+            <div class="graph-legend">
+                <div class="legend-title">Relationship Types</div>
+                <div class="legend-items">
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #2E7D32;"></span> Supports
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #1565C0;"></span> Extends
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #C62828;"></span> Contradicts
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q&A and Insights -->
+        <div class="dual-section">
+            <div class="card">
+                <h2 class="section-title">💬 Ask Questions</h2>
+                <input
+                    type="text"
+                    id="questionInput"
+                    class="question-input"
+                    placeholder="Ask about papers, relationships, or research trends..."
+                    onkeypress="if(event.key==='Enter') askQuestion()"
+                >
+                <button class="btn" onclick="askQuestion()" id="askBtn">Ask Question</button>
+
+                <div class="example-queries">
+                    <div class="example-queries-label">📋 Semantic Graph Queries</div>
+                    <div class="query-buttons">
+                        <button class="btn-example" onclick="setQuestion('Which papers contradict each other in the corpus?')">
+                            Find contradicting papers
+                        </button>
+                        <button class="btn-example" onclick="setQuestion('Show me papers that extend previous work on attention mechanisms')">
+                            Papers extending attention mechanisms
+                        </button>
+                        <button class="btn-example" onclick="setQuestion('What are the most influential papers based on citations and relationships?')">
+                            Most influential papers
+                        </button>
+                        <button class="btn-example" onclick="setQuestion('Find papers that support similar claims about model scaling')">
+                            Papers on model scaling
+                        </button>
+                    </div>
+                </div>
+
+                <div id="answerBox" class="answer-box">
+                    <div id="answerContent"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="section-title">📊 Insights</h2>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <span class="insight-label">Total Papers</span>
+                        <span class="insight-value" id="insightPapers">127</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Relationships</span>
+                        <span class="insight-value" id="insightRelationships">342</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Most Cited</span>
+                        <span class="insight-value" style="font-size: 16px; text-align: right;">Attention Is All You Need</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Last Upload</span>
+                        <span class="insight-value" style="font-size: 16px;">2 hours ago</span>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="openUploadModal()">📄 Upload Paper</button>
+                <button class="btn btn-secondary" onclick="scrollToCorpus()">📚 Browse Full Corpus</button>
+            </div>
+        </div>
+
+        <!-- Corpus Section - Bottom -->
+        <div class="corpus-section" id="corpusSection">
+            <div class="section-header">
+                <h2 class="section-title">📚 Research Corpus</h2>
+            </div>
+            <div id="papersList" class="papers-grid">
+                <p style="color: #6b7280;">Loading papers...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Upload Research Paper</h3>
+                <button class="btn-close" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Select PDF File</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="pdfFile" accept=".pdf" onchange="handleFileSelect(event)">
+                    <label for="pdfFile" class="file-input-label">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📄</div>
+                        <div style="font-weight: 600;">Drop PDF here or click to browse</div>
+                        <div style="font-size: 13px; color: #6b7280; margin-top: 8px;">Supports arXiv research papers</div>
+                    </label>
+                </div>
+                <div id="uploadStatus" style="margin-top: 12px;"></div>
+            </div>
+            <button class="btn" onclick="uploadPaper()" id="uploadBtn" disabled style="width: 100%;">Upload & Process</button>
+        </div>
+    </div>
+
+    <!-- Create Rule Modal -->
+    <div id="createRuleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Watch Rule</h3>
+                <button class="btn-close" onclick="closeCreateRuleModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Rule Type</label>
+                <select id="ruleType" class="form-select" onchange="updateRuleForm()">
+                    <option value="claim">Natural Language Claim</option>
+                    <option value="keyword">Keyword Matching</option>
+                    <option value="author">Author Tracking</option>
+                </select>
+            </div>
+            <div id="ruleFormFields">
+                <div class="form-group">
+                    <label class="form-label">Describe what you're looking for</label>
+                    <input type="text" id="ruleClaim" class="form-input"
+                           placeholder="e.g., Papers showing performance improvements through architectural innovations">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Your Email</label>
+                <input type="email" id="ruleEmail" class="form-input" placeholder="your@email.com">
+            </div>
+            <button class="btn" onclick="createWatchRule()" id="createRuleBtn" style="width: 100%;">Create Rule</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Modal functions
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+        }
+        function openCreateRuleModal() {
+            document.getElementById('createRuleModal').classList.add('active');
+        }
+        function closeCreateRuleModal() {
+            document.getElementById('createRuleModal').classList.remove('active');
+        }
+        function scrollToCorpus() {
+            document.getElementById('corpusSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Update rule form based on type
+        function updateRuleForm() {
+            const ruleType = document.getElementById('ruleType').value;
+            const fieldsDiv = document.getElementById('ruleFormFields');
+
+            if (ruleType === 'claim') {
+                fieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Describe what you're looking for</label>
+                        <input type="text" id="ruleClaim" class="form-input"
+                               placeholder="e.g., Papers showing performance improvements through architectural innovations">
+                    </div>
+                `;
+            } else if (ruleType === 'keyword') {
+                fieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Keywords (comma-separated)</label>
+                        <input type="text" id="ruleKeywords" class="form-input"
+                               placeholder="e.g., transformer, attention, neural">
+                    </div>
+                `;
+            } else if (ruleType === 'author') {
+                fieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Author Name</label>
+                        <input type="text" id="ruleAuthor" class="form-input"
+                               placeholder="e.g., Geoffrey Hinton">
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
