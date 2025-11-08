@@ -11,18 +11,24 @@ Examples:
 - "What builds upon BERT?" -> query_type: extensions, paper: "BERT"
 """
 
+import asyncio
+import uuid
 from typing import Dict, Optional
-from google import genai
+from google.adk.agents import LlmAgent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
 from google.genai import types
 import logging
 import json
+import re
 
-from src.utils.config import config
+from src.agents.base import BaseResearchAgent
+from src.utils.config import config, APP_NAME, DEFAULT_USER_ID
 
 logger = logging.getLogger(__name__)
 
 
-class GraphQueryAgent:
+class GraphQueryAgent(BaseResearchAgent):
     """
     LLM-based agent for understanding graph query intent.
 
@@ -43,11 +49,68 @@ class GraphQueryAgent:
         'none'           # Not a graph query
     ]
 
-    def __init__(self):
-        """Initialize the agent with ADK client."""
-        self.client = genai.Client(api_key=config.gcp.google_api_key)
-        self.model = config.agent.default_model
-        logger.info(f"GraphQueryAgent initialized with model: {self.model}")
+    def __init__(self, model: str = None):
+        """Initialize the Graph Query Agent with ADK."""
+        if model is None:
+            model = config.agent.default_model
+        super().__init__(name="GraphQueryAgent", model=model)
+
+    def _create_agent(self) -> LlmAgent:
+        """Create the graph query intent agent."""
+
+        instruction = """You are a query intent classifier for a research paper knowledge graph system.
+
+Your task: Analyze the user's question and determine if it's asking about the RELATIONSHIPS between papers (a "graph query") or about the CONTENT of papers (a "content query").
+
+**Graph Queries** ask about:
+- Citations: "Which papers cite X?", "What references Y?", "Show papers that build on Z"
+- Contradictions: "What challenges X?", "Papers that disagree with Y", "Contradictory findings to Z"
+- Extensions: "What extends X?", "Papers that improve upon Y", "Advances to Z"
+- Authors: "Papers by John Smith", "Who wrote X?", "Authors of Y"
+- Popularity: "Most cited papers", "Influential research", "Popular papers"
+- Relationships: "How are X and Y related?", "Connection between papers"
+
+**Content Queries** ask about:
+- Paper content: "What is the Transformer architecture?", "Explain BERT", "How does GPT work?"
+- Comparisons: "Difference between X and Y", "Compare approaches"
+- Technical details: "What dataset was used?", "What are the results?"
+
+Analyze the question and respond with JSON ONLY (no markdown, no code blocks):
+{
+    "is_graph_query": true/false,
+    "query_type": "citations|contradictions|extensions|author|popularity|relationships|none",
+    "parameters": {
+        "paper_title": "EXACT FULL TITLE from available papers list (if paper mentioned)",
+        "author_name": "extracted author name if mentioned",
+        "topic": "topic/subject if mentioned",
+        "limit": 10
+    },
+    "confidence": 0.0-1.0,
+    "reasoning": "brief explanation of classification"
+}
+
+Guidelines:
+- Set is_graph_query=true ONLY if asking about relationships/citations/structure
+- Set is_graph_query=false if asking about content/explanation/understanding
+- For paper_title, return the COMPLETE EXACT title from the available papers list if provided
+- For author queries, extract full name if present
+- Confidence: high (0.9+) if clear intent, medium (0.6-0.8) if ambiguous, low (<0.6) if unclear
+- If not a graph query, set query_type="none"
+- Return ONLY valid JSON, no markdown, no code blocks"""
+
+        # Use JSON mode for structured output
+        gen_config = types.GenerateContentConfig(
+            temperature=0.1,  # Low temperature for consistent classification
+            response_mime_type='application/json'
+        )
+
+        return LlmAgent(
+            name="GraphQueryAgent",
+            model=self.model,
+            description="Classifies queries as graph queries or content queries",
+            instruction=instruction,
+            generate_content_config=gen_config
+        )
 
     def analyze_query(self, question: str, available_papers: list = None) -> Dict:
         """
@@ -70,19 +133,54 @@ class GraphQueryAgent:
         # Build prompt
         prompt = self._build_analysis_prompt(question, available_papers)
 
-        try:
-            # Call LLM
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.1,  # Low temperature for consistent classification
-                    response_mime_type='application/json'
-                )
+        # Run the agent using ADK Runner
+        async def run_analysis():
+            """Run the agent asynchronously."""
+            # Create session service
+            session_service = InMemorySessionService()
+
+            # Generate unique session ID
+            session_id = f"graph_query_{uuid.uuid4().hex[:8]}"
+
+            # Create session
+            session = await session_service.create_session(
+                app_name=APP_NAME,
+                user_id=DEFAULT_USER_ID,
+                session_id=session_id
             )
 
-            # Parse JSON response
-            result = json.loads(response.text)
+            # Create runner
+            runner = Runner(
+                agent=self.agent,
+                app_name=APP_NAME,
+                session_service=session_service
+            )
+
+            # Prepare message
+            user_content = types.Content(
+                role='user',
+                parts=[types.Part(text=prompt)]
+            )
+
+            # Run agent and collect response
+            response_text = ""
+            async for event in runner.run_async(
+                user_id=DEFAULT_USER_ID,
+                session_id=session_id,
+                new_message=user_content
+            ):
+                if event.is_final_response() and event.content:
+                    response_text = event.content.parts[0].text
+                    break
+
+            return response_text
+
+        try:
+            # Run async analysis
+            response_text = asyncio.run(run_analysis())
+
+            # Parse JSON response (should already be JSON due to response_mime_type)
+            result = json.loads(response_text)
 
             logger.info(f"Query analysis: is_graph_query={result.get('is_graph_query')}, "
                        f"type={result.get('query_type')}, "

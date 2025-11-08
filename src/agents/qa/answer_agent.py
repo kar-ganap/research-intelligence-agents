@@ -75,11 +75,17 @@ Remember:
 - If unsure, say you don't have enough information
 """
 
+        # Use answer-specific temperature for grounded synthesis
+        gen_config = types.GenerateContentConfig(
+            temperature=config.agent.answer_temperature  # 0.4 - slightly creative but grounded
+        )
+
         return LlmAgent(
             name="AnswerAgent",
             model=self.model,
             description="Answers questions about research papers with citations",
-            instruction=instruction
+            instruction=instruction,
+            generate_content_config=gen_config
         )
 
     def _format_papers(self, papers: List[Dict]) -> str:

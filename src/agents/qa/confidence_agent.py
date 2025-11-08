@@ -103,11 +103,17 @@ Calculate final_score as weighted average:
 
 Return ONLY valid JSON, no markdown, no code blocks."""
 
+        # Use confidence-specific temperature for consistent scoring
+        gen_config = types.GenerateContentConfig(
+            temperature=config.agent.confidence_temperature  # 0.2 - needs consistency
+        )
+
         return LlmAgent(
             name="ConfidenceAgent",
             model=self.model,
             description="Evaluates answer confidence based on evidence quality",
-            instruction=instruction
+            instruction=instruction,
+            generate_content_config=gen_config
         )
 
     def score_confidence(

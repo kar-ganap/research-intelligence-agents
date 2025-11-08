@@ -63,11 +63,18 @@ Example of a good key_finding:
 If you cannot find some information, use empty strings or empty lists.
 """
 
+        # Use entity-specific temperature for consistent extraction
+        from google.genai import types
+        gen_config = types.GenerateContentConfig(
+            temperature=config.agent.entity_temperature  # 0.2 - needs consistency
+        )
+
         return LlmAgent(
             name="EntityExtractor",
             model=self.model,
             description="Extracts title, authors, and key finding from research papers",
             instruction=instruction,
+            generate_content_config=gen_config
         )
 
     def extract(self, paper_text: str) -> Dict[str, any]:

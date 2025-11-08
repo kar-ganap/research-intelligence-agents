@@ -34,15 +34,15 @@ This platform uses 7 specialized AI agents to:
 | **Intake Pipeline** | Cloud Run Job | Paper ingestion processing |
 | **Graph Updater** | Cloud Run Job | Relationship detection & updates |
 
-### AI Agents
+### AI Agents (All ADK-Compliant)
 
-- **Entity Agent** - Extracts authors, methods, datasets (Gemini 2.0 Flash)
-- **Relationship Agent** - Detects paper relationships: extends, supports, contradicts (Gemini 2.5 Pro)
-- **Graph Query Agent** - Translates natural language to graph queries (Gemini 2.0 Flash)
-- **Answer Agent** - Generates answers with citations (Gemini 2.0 Flash)
-- **Confidence Agent** - Scores answer confidence (Gemini 2.0 Flash)
-- **Alert Agent** - Matches papers to user interests (Gemini 2.0 Flash)
-- **Summary Agent** - Generates paper summaries (Gemini 2.0 Flash)
+All agents use Google ADK primitives (LlmAgent, Runner, InMemorySessionService) with Gemini 2.5 Pro:
+
+- **Entity Agent** - Extracts authors, methods, datasets
+- **Relationship Agent** - Detects paper relationships: extends, supports, contradicts
+- **Graph Query Agent** - Translates natural language to graph queries
+- **Answer Agent** - Generates answers with citations
+- **Confidence Agent** - Scores answer confidence
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture diagrams.
 

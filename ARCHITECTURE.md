@@ -32,11 +32,11 @@ graph TB
     end
 
     subgraph "AI Agents - Google ADK"
-        QAAgent[QA Agent<br/>gemini-2.0-flash]
-        SummaryAgent[Summary Agent<br/>gemini-2.0-flash]
+        EntityAgent[Entity Agent<br/>gemini-2.5-pro]
         RelAgent[Relationship Agent<br/>gemini-2.5-pro]
-        ConfAgent[Confidence Agent<br/>gemini-2.0-flash]
-        AlertAgent[Alert Matching Agent<br/>gemini-2.0-flash]
+        GraphQueryAgent[Graph Query Agent<br/>gemini-2.5-pro]
+        AnswerAgent[Answer Agent<br/>gemini-2.5-pro]
+        ConfAgent[Confidence Agent<br/>gemini-2.5-pro]
     end
 
     subgraph "External Services"
@@ -560,7 +560,7 @@ graph LR
 2. **Model Selection**:
    - gemini-2.5-pro for all agents (configurable via DEFAULT_MODEL in .env)
    - Provides best quality results for hackathon demo
-   - Can be changed to gemini-2.0-flash for cost optimization in production
+   - Can be changed to gemini-2.0-flash-exp for cost optimization in production
 
 3. **Batch Processing**:
    - Relationship detection runs periodically, not per-paper

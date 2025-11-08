@@ -122,9 +122,9 @@ Guidelines:
 - For "contradicts": Be conservative - only use for clear conflicts
 """
 
-        # Create generation config with temperature
+        # Use relationship-specific temperature for diverse discovery
         gen_config = types.GenerateContentConfig(
-            temperature=config.agent.temperature
+            temperature=config.agent.relationship_temperature  # 0.7 - proven optimal for graph density
         )
 
         return LlmAgent(
