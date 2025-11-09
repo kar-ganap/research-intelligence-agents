@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Intelligence Platform - Demo</title>
+    <script type="text/javascript" src="config.js?v=20251108"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Demo Mode Badge */
+        .demo-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fbbf24;
+            color: #78350f;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+
+        /* Header */
+        header {
+            background: white;
+            padding: 25px 35px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            background: white;
+            padding: 0;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 0;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            background: #f9fafb;
+            color: #6b7280;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 4px solid transparent;
+        }
+
+        .tab-button:hover {
+            background: #eef2ff;
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 4px solid #667eea;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 35px;
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========================================
+           TAB 1: SETUP STYLES
+           ======================================== */
+
+        .setup-section {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .setup-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .setup-subtitle {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .setup-card {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .setup-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .folder-upload-zone {
+            padding: 50px 20px;
+            background: white;
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .folder-upload-zone:hover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .folder-upload-zone.has-files {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .rule-templates {
+            display: grid;
+            gap: 15px;
+        }
+
+        .rule-template {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .rule-template:hover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .rule-template.selected {
+            border-color: #667eea;
+            background: #eef2ff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .rule-checkbox {
+            width: 24px;
+            height: 24px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .rule-template-content {
+            flex: 1;
+        }
+
+        .rule-template-type {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .rule-template-desc {
+            font-size: 15px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .email-input-group {
+            margin-top: 20px;
+        }
+
+        .email-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .email-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .email-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-start {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 30px;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-start:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 16px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .progress-details {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.8;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .progress-step.completed {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .progress-step.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* ========================================
+           TAB 2: KNOWLEDGE GRAPH STYLES
+           ======================================== */
+
+        .graph-section {
+            margin-top: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #1f2937;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-controls {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .time-slider-container {
+            margin-bottom: 15px;
+        }
+
+        .time-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .time-date {
+            font-size: 16px;
+            color: #667eea;
+        }
+
+        .time-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        .time-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        .snapshot-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .graph-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .graph-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .graph-stat-value {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .graph-controls select, .graph-controls button {
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .graph-controls select:hover, .graph-controls button:hover {
+            border-color: #667eea;
+        }
+
+        #graph {
+            width: 100%;
+            height: 550px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+
+        .graph-legend {
+            margin-top: 18px;
+            padding: 18px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .legend-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* New paper pulsing glow animation */
+        @keyframes pulseGlow {
+            0%, 100% {
+                filter: drop-shadow(0 0 8px rgba(255, 165, 0, 0.8));
+            }
+            50% {
+                filter: drop-shadow(0 0 15px rgba(255, 165, 0, 1));
+            }
+        }
+
+        .node-new {
+            animation: pulseGlow 2s infinite;
+        }
+
+        /* ========================================
+           TAB 3: ALERTS STYLES
+           ======================================== */
+
+        .alerts-section {
+            margin-top: 20px;
+        }
+
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .alerts-count {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .alert-card {
+            background: #f9fafb;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .alert-card:hover {
+            background: #eef2ff;
+            transform: translateX(4px);
+        }
+
+        .alert-card.new {
+            border-left-color: #fbbf24;
+            background: #fef3c7;
+        }
+
+        .alert-card.new:hover {
+            background: #fde68a;
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .alert-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .alert-badge.new {
+            background: #fbbf24;
+            color: #78350f;
+        }
+
+        .alert-badge.read {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .alert-timestamp {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .alert-rule {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .alert-paper-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .alert-paper-authors {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+
+        .alert-match-reason {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.6;
+            border-left: 3px solid #667eea;
+        }
+
+        .alert-match-score {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #d1fae5;
+            color: #065f46;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        .alert-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-alert {
+            padding: 8px 16px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #374151;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-alert:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        /* Shared Styles */
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-badge">DEMO MODE</div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>🧠 Research Intelligence Platform</h1>
+                    <p class="subtitle">Multi-agent AI powered by Google ADK • Interactive Demo</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="switchTab(0)">
+                1. Setup & Configuration
+            </button>
+            <button class="tab-button" onclick="switchTab(1)" id="tab2Button">
+                2. Knowledge Graph Evolution
+            </button>
+            <button class="tab-button" onclick="switchTab(2)" id="tab3Button">
+                3. Proactive Alerts
+            </button>
+        </div>
+
+        <!-- Tab 1: Setup & Configuration -->
+        <div class="tab-content active" id="tab1">
+            <div class="setup-section">
+                <h2 class="setup-title">Welcome to Research Intelligence Platform</h2>
+                <p class="setup-subtitle">
+                    Build your personalized knowledge graph and set up proactive alerts for research papers
+                </p>
+
+                <!-- Step 1: Upload Papers -->
+                <div class="setup-card">
+                    <h3>📁 Step 1: Upload Your Research Papers</h3>
+                    <div class="folder-upload-zone" id="folderUploadZone" onclick="simulateFileSelect()">
+                        <div class="upload-icon" id="uploadIcon">📁</div>
+                        <div class="upload-text" id="uploadText">Click to select folder with research papers</div>
+                        <div class="upload-subtext" id="uploadSubtext">We'll extract all PDFs from the selected folder</div>
+                    </div>
+                    <div id="selectedFolder" style="display: none; text-align: center; color: #10b981; font-weight: 600; font-size: 14px;">
+                        ✓ Selected folder with 25 PDF files
+                    </div>
+                </div>
+
+                <!-- Step 2: Configure Watch Rules -->
+                <div class="setup-card">
+                    <h3>🔔 Step 2: Choose Watch Rules</h3>
+                    <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+                        Select the types of papers you want to be notified about
+                    </p>
+
+                    <div class="rule-templates">
+                        <div class="rule-template" onclick="toggleRuleTemplate(this)">
+                            <input type="checkbox" class="rule-checkbox">
+                            <div class="rule-template-content">
+                                <div class="rule-template-type">Natural Language Claim</div>
+                                <div class="rule-template-desc">
+                                    "Papers claiming significant performance improvements on benchmark tasks through novel architectural innovations"
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rule-template" onclick="toggleRuleTemplate(this)">
+                            <input type="checkbox" class="rule-checkbox">
+                            <div class="rule-template-content">
+                                <div class="rule-template-type">Natural Language Claim</div>
+                                <div class="rule-template-desc">
+                                    "Research exploring how model scaling affects generalization and sample efficiency"
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rule-template" onclick="toggleRuleTemplate(this)">
+                            <input type="checkbox" class="rule-checkbox">
+                            <div class="rule-template-content">
+                                <div class="rule-template-type">Keyword Matching</div>
+                                <div class="rule-template-desc">
+                                    Keywords: transformer, attention, self-attention
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rule-template" onclick="toggleRuleTemplate(this)">
+                            <input type="checkbox" class="rule-checkbox">
+                            <div class="rule-template-content">
+                                <div class="rule-template-type">Author Tracking</div>
+                                <div class="rule-template-desc">
+                                    Following publications by: Yann LeCun, Geoffrey Hinton
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="email-input-group">
+                        <label class="email-label">Your Email Address</label>
+                        <input
+                            type="email"
+                            id="userEmail"
+                            class="email-input"
+                            placeholder="researcher@university.edu"
+                            value="">
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <button class="btn-start" id="startButton" onclick="startBuilding()" disabled>
+                    Start Building Knowledge Graph
+                </button>
+
+                <!-- Progress Indicator -->
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Initializing...</div>
+
+                    <div class="progress-details">
+                        <div class="progress-step" id="step1">
+                            <span>⏳</span> Extracting text from 25 PDF files...
+                        </div>
+                        <div class="progress-step" id="step2">
+                            <span>⏳</span> Detecting entities (titles, authors, key findings)...
+                        </div>
+                        <div class="progress-step" id="step3">
+                            <span>⏳</span> Building knowledge graph with relationships...
+                        </div>
+                        <div class="progress-step" id="step4">
+                            <span>⏳</span> Setting up watch rules and alerts...
+                        </div>
+                        <div class="progress-step" id="step5">
+                            <span>⏳</span> Finalizing your research intelligence platform...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Knowledge Graph Evolution -->
+        <div class="tab-content" id="tab2">
+            <div class="graph-section">
+                <div class="section-header">
+                    <h2 class="section-title">🕸️ Knowledge Graph Evolution</h2>
+                </div>
+
+                <!-- Time Slider Controls -->
+                <div class="time-controls">
+                    <div class="time-slider-container">
+                        <div class="time-label">
+                            <span>Timeline Evolution</span>
+                            <span class="time-date" id="currentDate">January 15, 2024</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            value="5"
+                            class="time-slider"
+                            id="timeSlider"
+                            oninput="updateTimeSnapshot()">
+                        <div class="snapshot-labels">
+                            <span>25 papers</span>
+                            <span>30 papers</span>
+                            <span>35 papers</span>
+                            <span>40 papers</span>
+                            <span>45 papers</span>
+                            <span>49 papers</span>
+                        </div>
+                    </div>
+                    <div class="graph-stats">
+                        <div class="graph-stat">
+                            <span>Papers:</span>
+                            <span class="graph-stat-value" id="statPapers">49</span>
+                        </div>
+                        <div class="graph-stat">
+                            <span>Relationships:</span>
+                            <span class="graph-stat-value" id="statRelationships">156</span>
+                        </div>
+                        <div class="graph-stat">
+                            <span>New Papers:</span>
+                            <span class="graph-stat-value" id="statNewPapers">4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graph Controls -->
+                <div class="graph-controls">
+                    <select id="relationshipFilter" onchange="filterGraph()">
+                        <option value="all">All Relationships</option>
+                        <option value="supports">Supports Only</option>
+                        <option value="extends">Extends Only</option>
+                        <option value="contradicts">Contradicts Only</option>
+                    </select>
+                    <button onclick="resetGraphView()">📍 Fit to Screen</button>
+                    <button onclick="togglePhysics()" id="togglePhysicsBtn">❄️ Freeze Graph</button>
+                </div>
+
+                <!-- Graph Visualization -->
+                <div id="graph"></div>
+
+                <!-- Legend -->
+                <div class="graph-legend">
+                    <div class="legend-title">Node Colors (Paper Categories)</div>
+                    <div class="legend-items" style="margin-bottom: 15px;">
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #FF6B6B;"></span> cs.AI - Artificial Intelligence
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #4ECDC4;"></span> cs.LG - Machine Learning
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #45B7D1;"></span> cs.CL - Computation & Language
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #FFA07A;"></span> cs.CV - Computer Vision
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #98D8C8;"></span> cs.MA - Multiagent Systems
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #F7DC6F;"></span> math.ST - Statistics Theory
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #BB8FCE;"></span> stat.ML - ML Statistics
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #95A5A6;"></span> Other Categories
+                        </span>
+                    </div>
+                    <div class="legend-title" style="margin-top: 15px;">Special Indicators</div>
+                    <div class="legend-items">
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #FFA500; animation: pulseGlow 2s infinite;"></span> New Papers (pulsing glow)
+                        </span>
+                    </div>
+                    <div class="legend-title" style="margin-top: 15px;">Relationship Types (Edge Colors)</div>
+                    <div class="legend-items">
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #2E7D32;"></span> Supports
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #1565C0;"></span> Extends
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color" style="background: #C62828;"></span> Contradicts
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Proactive Alerts -->
+        <div class="tab-content" id="tab3">
+            <div class="alerts-section">
+                <div class="alerts-header">
+                    <h2 class="section-title">📬 Alert Inbox</h2>
+                    <div class="alerts-count" id="alertsCount">5 new alerts</div>
+                </div>
+
+                <div id="alertsList">
+                    <!-- Alerts will be dynamically populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="demo.js"></script>
+</body>
+</html>
