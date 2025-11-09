@@ -62,51 +62,61 @@ function generateSnapshotDates() {
 const SNAPSHOT_CONFIG = generateSnapshotDates();
 
 // Sample alerts data for Tab 3
+// These are based on REAL papers from the database (papers #42-49) matched to realistic watch rules
 const SAMPLE_ALERTS = [
     {
         new: true,
-        timestamp: '2 hours ago',
-        rule: 'Performance Improvements',
-        paperTitle: 'Scaling Laws for Neural Language Models',
-        authors: ['Jared Kaplan', 'Sam McCandlish', 'Tom Henighan', 'Tom B. Brown', 'et al.'],
-        matchReason: 'This paper claims significant performance improvements on language modeling benchmarks through scaling model and dataset size. Matched claim: "Papers claiming significant performance improvements on benchmark tasks through novel architectural innovations"',
-        matchScore: 0.92
+        timestamp: '3 hours ago',
+        rule: 'Multimodal Learning',
+        paperTitle: 'GPT-4 Technical Report',
+        authors: ['OpenAI'],
+        matchReason: 'This paper demonstrates a major advance in multimodal learning by combining vision and language capabilities. GPT-4 achieves human-level performance on professional benchmarks while accepting both image and text inputs. Matched claim: "Research advancing multimodal learning that combines vision, language, or other modalities to achieve new capabilities"',
+        matchScore: 0.94
     },
     {
         new: true,
-        timestamp: '5 hours ago',
-        rule: 'Model Scaling Research',
-        paperTitle: 'Training Compute-Optimal Large Language Models',
-        authors: ['Jordan Hoffmann', 'Sebastian Borgeaud', 'Arthur Mensch', 'et al.'],
-        matchReason: 'Research exploring how model scaling affects generalization by investigating the optimal relationship between model size and training tokens. Matched claim: "Research exploring how model scaling affects generalization and sample efficiency"',
-        matchScore: 0.95
+        timestamp: '8 hours ago',
+        rule: 'Reasoning & Problem-Solving',
+        paperTitle: 'Tree of Thoughts: Deliberate Problem Solving with Large Language Models',
+        authors: ['Shunyu Yao', 'Dian Yu', 'Jeffrey Zhao'],
+        matchReason: 'Introduces a framework enabling LLMs to explore multiple reasoning paths and make deliberate decisions. Achieves 74% success on Game of 24 (vs 4% with chain-of-thought). Matched claim: "Methods that enhance language model reasoning, planning, or problem-solving through novel prompting or inference strategies"',
+        matchScore: 0.96
     },
     {
         new: true,
         timestamp: '1 day ago',
-        rule: 'Performance Improvements',
-        paperTitle: 'FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness',
-        authors: ['Tri Dao', 'Daniel Y. Fu', 'Stefano Ermon', 'et al.'],
-        matchReason: 'Paper claims 2-4x speedup on attention mechanisms while maintaining exact attention computation. Matched claim: "Papers claiming significant performance improvements on benchmark tasks through novel architectural innovations"',
-        matchScore: 0.88
+        rule: 'Open-Source Foundation Models',
+        paperTitle: 'Llama 2: Open Foundation and Fine-Tuned Chat Models',
+        authors: ['Hugo Touvron', 'Louis Martin', 'Kevin Stone'],
+        matchReason: 'Introduces Llama 2, a collection of open-source models (7B-70B parameters) that outperform other open-source chat models on most benchmarks. Matched claim: "Release of open-source foundation models that achieve competitive performance with closed-source alternatives"',
+        matchScore: 0.93
     },
     {
         new: false,
         timestamp: '2 days ago',
-        rule: 'Transformer Keywords',
-        paperTitle: 'Reformer: The Efficient Transformer',
-        authors: ['Nikita Kitaev', 'Łukasz Kaiser', 'Anselm Levskaya'],
-        matchReason: 'Matched keywords: transformer, attention, self-attention. Paper introduces locality-sensitive hashing for efficient attention.',
-        matchScore: 1.0
+        rule: 'Multimodal Learning',
+        paperTitle: 'Visual Instruction Tuning',
+        authors: ['Haotian Liu', 'Chunyuan Li', 'Qingyang Wu'],
+        matchReason: 'Introduces LLaVA, connecting vision encoders with LLMs through instruction-following data. Demonstrates strong multimodal chat capabilities. Matched claim: "Research advancing multimodal learning that combines vision, language, or other modalities to achieve new capabilities"',
+        matchScore: 0.91
     },
     {
         new: false,
         timestamp: '3 days ago',
-        rule: 'Model Scaling Research',
-        paperTitle: 'Emergent Abilities of Large Language Models',
-        authors: ['Jason Wei', 'Yi Tay', 'Rishi Bommasani', 'et al.'],
-        matchReason: 'Explores how model scaling leads to emergent abilities not present in smaller models. Matched claim: "Research exploring how model scaling affects generalization and sample efficiency"',
-        matchScore: 0.91
+        rule: 'Reasoning & Problem-Solving',
+        paperTitle: 'Reflexion: Language Agents with Verbal Reinforcement Learning',
+        authors: ['Noah Shinn', 'Federico Cassano', 'Edward Berman'],
+        matchReason: 'Proposes agents that reflect on task feedback and store experiences in episodic memory to improve decision-making. Matched claim: "Methods that enhance language model reasoning, planning, or problem-solving through novel prompting or inference strategies"',
+        matchScore: 0.90
+    },
+    {
+        new: false,
+        timestamp: '4 days ago',
+        rule: 'Open-Source Foundation Models',
+        paperTitle: 'LLaMA: Open and Efﬁcient Foundation Language Models',
+        authors: ['Hugo Touvron', 'Thibaut Lavril', 'Gautier Izacard'],
+        matchReason: 'Introduces LLaMA, a collection of foundation language models (7B-65B parameters) trained on publicly available datasets. Shows that smaller models trained on more data can achieve state-of-the-art results. Matched claim: "Release of open-source foundation models that achieve competitive performance with closed-source alternatives"',
+        matchScore: 0.89
     }
 ];
 
