@@ -19,16 +19,18 @@ graph TB
         GraphService[Graph Service<br/>Flask - Port 8082]
     end
 
-    subgraph "Cloud Jobs"
+    subgraph "Cloud Jobs & Workers"
         ArxivWatcher[ArXiv Watcher<br/>Daily Job]
         GraphUpdater[Graph Updater<br/>Periodic Job]
         IntakePipeline[Intake Pipeline<br/>On-Demand Job]
-        AlertWorker[Alert Worker<br/>Periodic Job]
+        AlertWorker[Alert Worker<br/>Service - Pub/Sub Consumer]
     end
 
-    subgraph "Google Cloud Storage"
+    subgraph "Google Cloud Storage & Messaging"
         Firestore[(Firestore<br/>Document Database)]
         CloudStorage[Cloud Storage<br/>PDF Files]
+        PubSubCandidates[Pub/Sub<br/>arxiv.candidates]
+        PubSubMatches[Pub/Sub<br/>arxiv.matches]
     end
 
     subgraph "AI Agents - Google ADK"
@@ -58,19 +60,19 @@ graph TB
     GraphService --> Firestore
 
     ArxivWatcher --> ArxivAPI
-    ArxivWatcher --> IntakePipeline
+    ArxivWatcher --> PubSubCandidates
+    PubSubCandidates --> IntakePipeline
 
     IntakePipeline --> CloudStorage
     IntakePipeline --> EntityAgent
-    IntakePipeline --> RelAgent
+    IntakePipeline --> AlertAgent
     IntakePipeline --> Firestore
+    IntakePipeline --> PubSubMatches
 
     GraphUpdater --> RelAgent
-    GraphUpdater --> ConfAgent
     GraphUpdater --> Firestore
 
-    AlertWorker --> AlertAgent
-    AlertWorker --> Firestore
+    PubSubMatches --> AlertWorker
     AlertWorker --> SendGrid
 
     style Frontend fill:#e3f2fd
@@ -95,17 +97,26 @@ sequenceDiagram
     participant Frontend
     participant APIGateway
     participant Orchestrator
-    participant Storage as Cloud Storage
-    participant Summary as Summary Agent
+    participant PubSub as Pub/Sub (arxiv.candidates)
+    participant IntakePipeline as Intake Pipeline Job
+    participant EntityAgent as Entity Agent
+    participant AlertAgent as Alert Matching Agent
     participant Firestore
+    participant PubSubMatches as Pub/Sub (arxiv.matches)
 
     User->>Frontend: Upload PDF
     Frontend->>APIGateway: POST /api/upload
     APIGateway->>Orchestrator: Forward upload
-    Orchestrator->>Storage: Store PDF
-    Orchestrator->>Summary: Extract & summarize
-    Summary-->>Orchestrator: Summary + metadata
-    Orchestrator->>Firestore: Store paper document
+    Orchestrator->>Orchestrator: Extract arXiv ID from filename
+    Orchestrator->>PubSub: Publish paper + metadata
+    PubSub->>IntakePipeline: Trigger processing
+    IntakePipeline->>EntityAgent: Extract entities
+    EntityAgent-->>IntakePipeline: Title, authors, key findings
+    IntakePipeline->>AlertAgent: Match against watch rules
+    AlertAgent-->>IntakePipeline: Match results
+    IntakePipeline->>Firestore: Store paper document
+    IntakePipeline->>PubSubMatches: Publish alerts
+    IntakePipeline-->>Orchestrator: Success
     Orchestrator-->>APIGateway: Success response
     APIGateway-->>Frontend: Paper ID
     Frontend-->>User: Upload complete
@@ -119,16 +130,22 @@ sequenceDiagram
     participant Frontend
     participant APIGateway
     participant Orchestrator
-    participant QA as QA Agent
+    participant GraphQueryAgent as Graph Query Agent
     participant Firestore
+    participant AnswerAgent as Answer Agent
+    participant ConfAgent as Confidence Agent
 
     User->>Frontend: Ask question
     Frontend->>APIGateway: POST /api/ask
     APIGateway->>Orchestrator: Forward question
+    Orchestrator->>GraphQueryAgent: Translate to graph query
+    GraphQueryAgent-->>Orchestrator: Query parameters
     Orchestrator->>Firestore: Retrieve relevant papers
     Firestore-->>Orchestrator: Paper data
-    Orchestrator->>QA: Question + context
-    QA-->>Orchestrator: Answer + citations + confidence
+    Orchestrator->>AnswerAgent: Question + context
+    AnswerAgent-->>Orchestrator: Answer + citations
+    Orchestrator->>ConfAgent: Score confidence
+    ConfAgent-->>Orchestrator: Confidence score
     Orchestrator-->>APIGateway: Response
     APIGateway-->>Frontend: Answer data
     Frontend-->>User: Display answer
@@ -169,34 +186,36 @@ sequenceDiagram
     participant Scheduler as Cloud Scheduler
     participant ArxivWatcher
     participant ArxivAPI
-    participant IntakePipeline
-    participant AlertWorker
-    participant AlertAgent
+    participant PubSub as Pub/Sub (arxiv.candidates)
+    participant IntakePipeline as Intake Pipeline Job
+    participant AlertAgent as Alert Matching Agent
     participant Firestore
+    participant PubSubMatches as Pub/Sub (arxiv.matches)
+    participant AlertWorker as Alert Worker Service
     participant SendGrid
     participant User
 
-    Scheduler->>ArxivWatcher: Daily trigger
+    Scheduler->>ArxivWatcher: Daily trigger (6am UTC)
     ArxivWatcher->>ArxivAPI: Fetch new papers
     ArxivAPI-->>ArxivWatcher: Paper metadata
 
     loop For each new paper
-        ArxivWatcher->>IntakePipeline: Process paper
+        ArxivWatcher->>PubSub: Publish paper metadata
+        PubSub->>IntakePipeline: Trigger processing
         IntakePipeline->>Firestore: Store paper
-    end
+        IntakePipeline->>Firestore: Get active watch rules
 
-    Scheduler->>AlertWorker: Periodic trigger
-    AlertWorker->>Firestore: Get new papers
-    AlertWorker->>Firestore: Get watch rules
+        loop For each watch rule
+            IntakePipeline->>AlertAgent: Match paper to rule
+            AlertAgent-->>IntakePipeline: Match score + explanation
 
-    loop For each paper × rule
-        AlertWorker->>AlertAgent: Match paper to rule
-        AlertAgent-->>AlertWorker: Match score
-
-        alt Match found
-            AlertWorker->>Firestore: Create alert
-            AlertWorker->>SendGrid: Send email
-            SendGrid-->>User: Email notification
+            alt Match found
+                IntakePipeline->>Firestore: Create alert
+                IntakePipeline->>PubSubMatches: Publish alert data
+                PubSubMatches->>AlertWorker: Trigger email send
+                AlertWorker->>SendGrid: Send email notification
+                SendGrid-->>User: Email with paper details
+            end
         end
     end
 ```
@@ -343,27 +362,28 @@ sequenceDiagram
 - **Rate Limiting**: 60 requests/min to respect Gemini API limits
 
 #### 4. Alert Worker
-- **Architecture**: Pull-based Pub/Sub consumer with Flask health endpoint
+- **Architecture**: Cloud Run Service with Pub/Sub push subscription
 - **Pub/Sub Topic**: `arxiv.matches`
-- **Subscription**: `arxiv.matches-sub`
-- **Schedule**: Continuous (pulls messages as they arrive)
-- **Purpose**: Match papers to watch rules and send email notifications
+- **Trigger**: Push subscription from Pub/Sub when alerts are created
+- **Purpose**: Send email notifications for paper matches
 - **Process**:
-  1. Listen to Pub/Sub subscription for paper match events
-  2. Parse alert data from message
+  1. Receive push notification from Pub/Sub with alert data
+  2. Parse alert data from message payload
   3. Generate enhanced email with:
      - Category-specific subject line
      - Match confidence percentage (color-coded)
      - Key findings excerpt (truncated to 300 chars)
      - Category name mapping (cs.AI → Artificial Intelligence)
+     - arXiv paper link
   4. Send email via SendGrid API
   5. Fallback to logging if SendGrid not configured
-  6. Acknowledge message on success, nack on failure
+  6. Return 200 OK on success, 500 on failure (Pub/Sub retries)
 - **Email Features**:
   - HTML and plain text versions
   - Confidence color coding: green (≥70%), orange (50-69%), gray (<50%)
-  - arXiv paper links
+  - Direct arXiv paper links
   - Unsubscribe information
+- **Note**: Alert matching is done by Intake Pipeline, not Alert Worker
 
 ### AI Agents (Google ADK)
 
