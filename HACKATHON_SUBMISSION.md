@@ -1,6 +1,6 @@
 # Research Intelligence Agents
 
-**🎯 Live Demo**: https://frontend-up5qa34vea-uc.a.run.app
+**🎯 Live Demo**: https://frontend-up5qa34vea-uc.a.run.app (or https://frontend-338657477881.us-central1.run.app)
 
 ---
 
@@ -217,4 +217,4 @@ Research Intelligence Agents demonstrates what's possible when you combine Googl
 
 ---
 
-**🎯 Try it live**: https://frontend-up5qa34vea-uc.a.run.app
+**🎯 Try it live**: https://frontend-up5qa34vea-uc.a.run.app (or https://frontend-338657477881.us-central1.run.app)

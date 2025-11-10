@@ -4,7 +4,7 @@ Multi-agent AI system for monitoring research literature, building knowledge gra
 
 **Built with**: Google Gemini API, Cloud Run, Gemini 2.0 Flash & Gemini 2.5 Pro, Firestore
 
-**🎉 Live Demo**: https://frontend-up5qa34vea-uc.a.run.app
+**🎉 Live Demo**: https://frontend-up5qa34vea-uc.a.run.app (or https://frontend-338657477881.us-central1.run.app)
 
 ---
 
