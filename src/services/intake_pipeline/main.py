@@ -166,7 +166,7 @@ def process_paper(paper_data: Dict) -> Dict:
                 metadata=metadata
             )
 
-            if result['status'] == 'success':
+            if result.get('success'):
                 logger.info(f"✅ Successfully ingested: {title}")
                 logger.info(f"  Paper ID: {result['paper_id']}")
                 logger.info(f"  Relationships detected: {result.get('relationships_detected', 0)}")

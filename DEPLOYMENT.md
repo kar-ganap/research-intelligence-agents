@@ -29,9 +29,27 @@ Complete guide for deploying to Google Cloud Run for the hackathon submission.
    ```
 
 4. **Environment Variables**
+
+   Create a `.env` file in the project root:
+
    ```bash
-   export GOOGLE_CLOUD_PROJECT=your-project-id
-   export REGION=us-central1
+   # Core Configuration
+   GOOGLE_CLOUD_PROJECT=your-project-id
+   GOOGLE_API_KEY=your-gemini-api-key
+   DEFAULT_MODEL=gemini-2.5-pro  # or gemini-2.0-flash-exp for cost optimization
+
+   # Deployment
+   REGION=us-central1
+
+   # Email Notifications
+   FROM_EMAIL=noreply@research-intelligence.app
+   SENDGRID_API_KEY=your-sendgrid-key  # Optional, for email delivery
+   ```
+
+   Then source the file before deployment:
+   ```bash
+   source .env
+   ./scripts/deploy_all_services.sh
    ```
 
 ---

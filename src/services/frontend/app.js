@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadGraph();
     loadWatchRules();
     loadAlerts();
+    updateStats(); // Update stats for new design
 });
 
 /**
@@ -231,10 +232,12 @@ async function askQuestion() {
         let citationsHtml = '';
 
         if (data.citations && data.citations.length > 0) {
-            citationsHtml += '<p><strong>Sources:</strong></p>';
+            citationsHtml += '<p style="margin-top: 0;"><strong>Sources:</strong></p>';
+            citationsHtml += '<ul style="margin-top: 10px; padding-left: 20px;">';
             data.citations.forEach(citation => {
-                citationsHtml += `<span class="citation">${citation}</span>`;
+                citationsHtml += `<li style="margin-bottom: 5px;">${citation}</li>`;
             });
+            citationsHtml += '</ul>';
         }
 
         // Show retrieved papers if available
@@ -343,43 +346,99 @@ async function loadPapers() {
         allPapersData = papers; // Store globally
 
         if (papers.length === 0) {
-            papersList.innerHTML = '<p style="color: #5f6368;">No papers in corpus yet.</p>';
+            papersList.innerHTML = '<p style="color: #6b7280;">No papers in corpus yet.</p>';
             return;
         }
 
-        // Group papers by category
-        const papersByCategory = {};
-        papers.forEach(paper => {
-            const category = paper.primary_category || (paper.categories && paper.categories[0]) || 'Unknown';
-            if (!papersByCategory[category]) {
-                papersByCategory[category] = [];
-            }
-            papersByCategory[category].push(paper);
+        // Check if we're using the new grid layout (index_v2.html)
+        // The new layout has papers-grid class on papersList
+        const isGridLayout = papersList && papersList.classList.contains('papers-grid');
+
+        if (isGridLayout) {
+            // New grid layout for index_v2.html
+            renderPapersGrid(papers, papersList);
+        } else {
+            // Old categorized table layout for index.html
+            renderPapersTable(papers, papersList);
+        }
+
+    } catch (error) {
+        console.error('Error loading papers:', error);
+        papersList.innerHTML = `<div class="error">Error loading papers: ${error.message}</div>`;
+    }
+}
+
+/**
+ * Render papers in grid layout (index_v2.html)
+ */
+function renderPapersGrid(papers, papersList) {
+    let html = '';
+
+    // Show most recent papers first
+    const sortedPapers = papers.sort((a, b) => {
+        const dateA = a.published ? new Date(a.published) : new Date(0);
+        const dateB = b.published ? new Date(b.published) : new Date(0);
+        return dateB - dateA;
+    });
+
+    sortedPapers.forEach(paper => {
+        const displayTitle = toTitleCase(paper.title);
+        const authors = paper.authors ? paper.authors.slice(0, 2).join(', ') + (paper.authors.length > 2 ? ', et al.' : '') : 'Unknown authors';
+        const arxivId = paper.arxiv_id || paper.paper_id;
+        const published = paper.published ? new Date(paper.published).toLocaleDateString() : 'N/A';
+
+        html += `
+            <div class="paper-card">
+                <div class="paper-title">${displayTitle}</div>
+                <div class="paper-authors">${authors}</div>
+                <div class="paper-meta">
+                    <span>📅 ${published}</span>
+                    ${arxivId ? `<span><a href="https://arxiv.org/abs/${arxivId}" target="_blank" style="color: #667eea; text-decoration: none;">View arXiv ↗</a></span>` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    papersList.innerHTML = html;
+}
+
+/**
+ * Render papers in categorized table layout (index.html)
+ */
+function renderPapersTable(papers, papersList) {
+    // Group papers by category
+    const papersByCategory = {};
+    papers.forEach(paper => {
+        const category = paper.primary_category || (paper.categories && paper.categories[0]) || 'Unknown';
+        if (!papersByCategory[category]) {
+            papersByCategory[category] = [];
+        }
+        papersByCategory[category].push(paper);
+    });
+
+    // Sort each category by published date (newest first by default)
+    Object.keys(papersByCategory).forEach(category => {
+        const categoryId = category.replace(/\./g, '_');
+        sortOrder[categoryId] = 'desc'; // Initialize sort order
+
+        papersByCategory[category].sort((a, b) => {
+            const dateA = a.published ? new Date(a.published) : new Date(0);
+            const dateB = b.published ? new Date(b.published) : new Date(0);
+            return dateB - dateA; // Newest first
         });
+    });
 
-        // Sort each category by published date (newest first by default)
-        Object.keys(papersByCategory).forEach(category => {
-            const categoryId = category.replace(/\./g, '_');
-            sortOrder[categoryId] = 'desc'; // Initialize sort order
+    // Build HTML with collapsible sections and tables
+    let html = '';
+    const sortedCategories = Object.keys(papersByCategory).sort();
 
-            papersByCategory[category].sort((a, b) => {
-                const dateA = a.published ? new Date(a.published) : new Date(0);
-                const dateB = b.published ? new Date(b.published) : new Date(0);
-                return dateB - dateA; // Newest first
-            });
-        });
+    sortedCategories.forEach(category => {
+        const categoryPapers = papersByCategory[category];
+        const categoryColor = getCategoryColor(category);
+        const categoryDisplayName = getCategoryDisplayName(category);
+        const categoryId = category.replace(/\./g, '_'); // Safe ID for HTML
 
-        // Build HTML with collapsible sections and tables
-        let html = '';
-        const sortedCategories = Object.keys(papersByCategory).sort();
-
-        sortedCategories.forEach(category => {
-            const categoryPapers = papersByCategory[category];
-            const categoryColor = getCategoryColor(category);
-            const categoryDisplayName = getCategoryDisplayName(category);
-            const categoryId = category.replace(/\./g, '_'); // Safe ID for HTML
-
-            html += `
+        html += `
                 <div class="category-section">
                     <div class="category-header" onclick="toggleCategory('${categoryId}')" style="cursor: pointer; background: ${categoryColor}15; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                         <div>
@@ -401,41 +460,36 @@ async function loadPapers() {
                                 </tr>
                             </thead>
                             <tbody id="table-body-${categoryId}">
-            `;
+        `;
 
-            categoryPapers.forEach(paper => {
-                const arxivId = paper.arxiv_id || paper.paper_id;
-                const arxivUrl = arxivId ? `https://arxiv.org/abs/${arxivId}` : null;
-                const pdfUrl = arxivId ? `https://arxiv.org/pdf/${arxivId}.pdf` : null;
-                const displayTitle = toTitleCase(paper.title);
-
-                html += `
-                    <tr>
-                        <td style="padding: 12px 8px;">
-                            ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="color: #1a73e8; text-decoration: none;">${displayTitle}</a>` : displayTitle}
-                            ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="margin-left: 8px; font-size: 12px; color: #5f6368;" title="View on arXiv">↗</a>` : ''}
-                            ${pdfUrl ? `<a href="${pdfUrl}" target="_blank" style="margin-left: 4px; font-size: 12px; color: #5f6368;" title="Download PDF">📥</a>` : ''}
-                        </td>
-                        <td style="padding: 12px 8px; color: #5f6368; font-size: 14px;">${paper.authors ? paper.authors.slice(0, 3).join(', ') + (paper.authors.length > 3 ? ', et al.' : '') : 'Unknown authors'}</td>
-                        <td style="padding: 12px 8px; color: #5f6368; font-size: 14px; white-space: nowrap;">${paper.published ? new Date(paper.published).toLocaleDateString() : 'N/A'}</td>
-                    </tr>
-                `;
-            });
+        categoryPapers.forEach(paper => {
+            const arxivId = paper.arxiv_id || paper.paper_id;
+            const arxivUrl = arxivId ? `https://arxiv.org/abs/${arxivId}` : null;
+            const pdfUrl = arxivId ? `https://arxiv.org/pdf/${arxivId}.pdf` : null;
+            const displayTitle = toTitleCase(paper.title);
 
             html += `
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <tr>
+                    <td style="padding: 12px 8px;">
+                        ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="color: #1a73e8; text-decoration: none;">${displayTitle}</a>` : displayTitle}
+                        ${arxivUrl ? `<a href="${arxivUrl}" target="_blank" style="margin-left: 8px; font-size: 12px; color: #5f6368;" title="View on arXiv">↗</a>` : ''}
+                        ${pdfUrl ? `<a href="${pdfUrl}" target="_blank" style="margin-left: 4px; font-size: 12px; color: #5f6368;" title="Download PDF">📥</a>` : ''}
+                    </td>
+                    <td style="padding: 12px 8px; color: #5f6368; font-size: 14px;">${paper.authors ? paper.authors.slice(0, 3).join(', ') + (paper.authors.length > 3 ? ', et al.' : '') : 'Unknown authors'}</td>
+                    <td style="padding: 12px 8px; color: #5f6368; font-size: 14px; white-space: nowrap;">${paper.published ? new Date(paper.published).toLocaleDateString() : 'N/A'}</td>
+                </tr>
             `;
         });
 
-        papersList.innerHTML = html;
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    });
 
-    } catch (error) {
-        console.error('Error loading papers:', error);
-        papersList.innerHTML = `<div class="error">Error loading papers: ${error.message}</div>`;
-    }
+    papersList.innerHTML = html;
 }
 
 /**
@@ -984,6 +1038,47 @@ function togglePhysics() {
     // Update button text based on state
     const btn = document.getElementById('togglePhysicsBtn');
     if (btn) {
-        btn.textContent = physicsEnabled ? 'Freeze Graph' : 'Unfreeze Graph';
+        btn.textContent = physicsEnabled ? '❄️ Freeze Graph' : '🔥 Unfreeze Graph';
+    }
+}
+
+/**
+ * Update stats for new design (header and insights)
+ */
+async function updateStats() {
+    try {
+        // Fetch all data
+        const [papersRes, graphRes, alertsRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/papers`),
+            fetch(`${API_BASE_URL}/api/graph`),
+            fetch(`${API_BASE_URL}/api/alerts`)
+        ]);
+
+        const papersData = await papersRes.json();
+        const graphData = await graphRes.json();
+        const alertsData = await alertsRes.json();
+
+        const paperCount = (papersData.papers || []).length;
+        const relationshipCount = (graphData.edges || []).length;
+        const alertCount = (alertsData.alerts || []).filter(a => !a.sent).length;
+
+        // Update header stats (if they exist - for index_v2)
+        const statPapers = document.getElementById('statPapers');
+        const statRelationships = document.getElementById('statRelationships');
+        const statAlerts = document.getElementById('statAlerts');
+
+        if (statPapers) statPapers.textContent = paperCount;
+        if (statRelationships) statRelationships.textContent = relationshipCount;
+        if (statAlerts) statAlerts.textContent = alertCount;
+
+        // Update insights section (if it exists - for index_v2)
+        const insightPapers = document.getElementById('insightPapers');
+        const insightRelationships = document.getElementById('insightRelationships');
+
+        if (insightPapers) insightPapers.textContent = paperCount;
+        if (insightRelationships) insightRelationships.textContent = relationshipCount;
+
+    } catch (error) {
+        console.error('Error updating stats:', error);
     }
 }

@@ -35,11 +35,11 @@ CLOUD_RUN_TASK_COUNT = int(os.environ.get('CLOUD_RUN_TASK_COUNT', '1'))
 SKIP_EXISTING = os.environ.get('SKIP_EXISTING', 'true').lower() == 'true'
 
 
-def get_paper_pairs_for_task(papers: List[Dict], task_index: int, task_count: int) -> List[Tuple[Dict, Dict]]:
+def get_papers_for_task(papers: List[Dict], task_index: int, task_count: int) -> List[Dict]:
     """
-    Distribute paper pairs across parallel tasks.
+    Distribute papers across parallel tasks.
 
-    Each task gets a subset of pairs to process.
+    Each task gets a subset of papers to process against all other papers.
 
     Args:
         papers: List of all papers
@@ -47,99 +47,34 @@ def get_paper_pairs_for_task(papers: List[Dict], task_index: int, task_count: in
         task_count: Total number of tasks
 
     Returns:
-        List of (source_paper, target_paper) tuples for this task
+        List of papers for this task to process
     """
-    all_pairs = []
-
-    # Generate all unique pairs (n choose 2)
-    for i in range(len(papers)):
-        for j in range(i + 1, len(papers)):
-            all_pairs.append((papers[i], papers[j]))
-
-    # Distribute pairs across tasks
-    pairs_for_task = []
-    for idx, pair in enumerate(all_pairs):
+    # Distribute papers across tasks
+    papers_for_task = []
+    for idx, paper in enumerate(papers):
         if idx % task_count == task_index:
-            pairs_for_task.append(pair)
+            papers_for_task.append(paper)
 
-    logger.info(f"Task {task_index}: Processing {len(pairs_for_task)} pairs out of {len(all_pairs)} total")
-    return pairs_for_task
+    logger.info(f"Task {task_index}: Processing {len(papers_for_task)} papers out of {len(papers)} total")
+    return papers_for_task
 
 
-def detect_relationship(
-    source_paper: Dict,
-    target_paper: Dict,
-    relationship_agent: RelationshipAgent,
-    firestore_client: FirestoreClient
-) -> bool:
-    """
-    Detect and store relationship between two papers.
-
-    Args:
-        source_paper: Source paper data
-        target_paper: Target paper data
-        relationship_agent: Initialized RelationshipAgent
-        firestore_client: Firestore client
-
-    Returns:
-        True if relationship found and stored, False otherwise
-    """
-    source_id = source_paper['paper_id']
-    target_id = target_paper['paper_id']
-
-    logger.info(f"Analyzing: {source_paper['title'][:40]}... → {target_paper['title'][:40]}...")
-
-    try:
-        # Check if relationship already exists
-        if SKIP_EXISTING:
-            existing = firestore_client.get_relationship(source_id, target_id)
-            if existing:
-                logger.info(f"  ⏭️  Relationship already exists, skipping")
-                return False
-
-        # Detect relationship using ADK agent
-        result = relationship_agent.detect_relationship(
-            source_paper=source_paper,
-            target_paper=target_paper
-        )
-
-        if result.get('relationship_type'):
-            # Store relationship
-            relationship_data = {
-                'source_id': source_id,
-                'target_id': target_id,
-                'relationship_type': result['relationship_type'],
-                'confidence': result.get('confidence', 0.5),
-                'evidence': result.get('evidence', ''),
-                'created_at': firestore_client._get_timestamp()
-            }
-
-            firestore_client.store_relationship(relationship_data)
-
-            logger.info(f"  ✅ Found: {result['relationship_type']} (confidence: {result.get('confidence', 0):.2f})")
-            return True
-        else:
-            logger.info(f"  ⚪ No relationship detected")
-            return False
-
-    except Exception as e:
-        logger.error(f"  ❌ Error: {str(e)}")
-        return False
 
 
 def main():
     """
-    Main job execution.
+    Main job execution with temporal validation.
 
     Steps:
     1. Fetch all papers
-    2. Generate paper pairs for this task
-    3. Detect relationships using RelationshipAgent (ADK)
-    4. Store results
-    5. Exit
+    2. Distribute papers across parallel tasks
+    3. For each paper assigned to this task, detect relationships with all other papers
+    4. Use detect_relationships_batch() which includes temporal validation
+    5. Store results
+    6. Exit
     """
     logger.info("=" * 70)
-    logger.info("Graph Updater Job Started")
+    logger.info("Graph Updater Job Started (with temporal validation)")
     logger.info("=" * 70)
     logger.info(f"Project ID: {PROJECT_ID}")
     logger.info(f"Task Index: {CLOUD_RUN_TASK_INDEX}")
@@ -166,29 +101,64 @@ def main():
             logger.warning("Need at least 2 papers to detect relationships")
             return 0
 
-        # Get pairs for this task
-        pairs = get_paper_pairs_for_task(papers, CLOUD_RUN_TASK_INDEX, CLOUD_RUN_TASK_COUNT)
+        # Get papers for this task
+        task_papers = get_papers_for_task(papers, CLOUD_RUN_TASK_INDEX, CLOUD_RUN_TASK_COUNT)
 
-        if not pairs:
-            logger.warning(f"No pairs assigned to task {CLOUD_RUN_TASK_INDEX}")
+        if not task_papers:
+            logger.warning(f"No papers assigned to task {CLOUD_RUN_TASK_INDEX}")
             return 0
 
-        # Process pairs
-        logger.info(f"\nProcessing {len(pairs)} paper pairs...")
+        # Process papers with temporal validation
+        logger.info(f"\nProcessing {len(task_papers)} papers with temporal validation...")
         relationships_found = 0
+        relationships_skipped = 0
 
-        for i, (source, target) in enumerate(pairs, 1):
-            logger.info(f"\n--- Pair {i}/{len(pairs)} ---")
+        for i, current_paper in enumerate(task_papers, 1):
+            # Get all other papers
+            other_papers = [p for p in papers if p['paper_id'] != current_paper['paper_id']]
 
-            found = detect_relationship(source, target, relationship_agent, firestore_client)
-            if found:
+            logger.info(f"\n--- Paper {i}/{len(task_papers)} ---")
+            logger.info(f"Title: {current_paper['title'][:50]}...")
+
+            # Use detect_relationships_batch which includes temporal validation
+            relationships = relationship_agent.detect_relationships_batch(
+                new_paper=current_paper,
+                existing_papers=other_papers,
+                min_confidence=0.6
+            )
+
+            # Store relationships that don't already exist
+            for rel in relationships:
+                source_id = rel.get('source_paper_id')
+                target_id = rel.get('target_paper_id')
+
+                # Check if relationship already exists
+                if SKIP_EXISTING:
+                    existing = firestore_client.get_relationship_between_papers(source_id, target_id)
+                    if existing:
+                        relationships_skipped += 1
+                        continue
+
+                # Store new relationship
+                relationship_data = {
+                    'source_id': source_id,
+                    'target_id': target_id,
+                    'relationship_type': rel['relationship_type'],
+                    'confidence': rel.get('confidence', 0.5),
+                    'evidence': rel.get('evidence', ''),
+                    'created_at': firestore_client._get_timestamp()
+                }
+
+                firestore_client.store_relationship(relationship_data)
                 relationships_found += 1
+                logger.info(f"  ✅ Stored: {rel['relationship_type']} (confidence: {rel.get('confidence', 0):.2f})")
 
         # Summary
         logger.info("\n" + "=" * 70)
         logger.info("Graph Updater Job Complete")
-        logger.info(f"  Pairs processed: {len(pairs)}")
+        logger.info(f"  Papers processed: {len(task_papers)}")
         logger.info(f"  Relationships found: {relationships_found}")
+        logger.info(f"  Skipped (existing): {relationships_skipped}")
         logger.info(f"  Task: {CLOUD_RUN_TASK_INDEX + 1}/{CLOUD_RUN_TASK_COUNT}")
         logger.info("=" * 70)
 

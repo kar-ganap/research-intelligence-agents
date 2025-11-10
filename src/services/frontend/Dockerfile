@@ -5,7 +5,9 @@ FROM nginx:alpine
 
 # Copy static files
 COPY index.html /usr/share/nginx/html/
+COPY demo.html /usr/share/nginx/html/
 COPY app.js /usr/share/nginx/html/
+COPY demo.js /usr/share/nginx/html/
 COPY config.js /usr/share/nginx/html/
 
 # Copy nginx config (optional, using default for now)

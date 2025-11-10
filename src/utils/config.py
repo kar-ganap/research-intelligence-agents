@@ -40,9 +40,16 @@ class GCPConfig:
 class AgentConfig:
     """Agent configuration"""
     default_model: str
-    temperature: float
+    temperature: float  # Deprecated - use per-agent temperatures below
     max_tokens: int
     timeout: int
+
+    # Per-agent temperature settings (Option B: Optimized for Hackathon/Discovery)
+    entity_temperature: float = 0.2  # Structured extraction - needs consistency
+    relationship_temperature: float = 0.7  # Discovery - maximize graph density (proven optimal)
+    graph_query_temperature: float = 0.1  # Classification - needs determinism
+    answer_temperature: float = 0.4  # Synthesis - slightly creative but grounded
+    confidence_temperature: float = 0.2  # Analytical scoring - needs consistency
 
 
 @dataclass

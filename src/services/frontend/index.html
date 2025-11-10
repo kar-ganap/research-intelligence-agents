@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Research Intelligence Platform</title>
-    <!-- Load config FIRST to ensure API_BASE_URL is defined before app.js runs -->
-    <script type="text/javascript" src="config.js?v=20251105143152"></script>
+    <title>Research Intelligence Platform - Demo</title>
+    <script type="text/javascript" src="config.js?v=20251108"></script>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         * {
@@ -16,97 +15,366 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f7fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
 
+        /* Header with stats */
         header {
             background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            padding: 25px 35px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         h1 {
-            color: #1a73e8;
-            font-size: 32px;
-            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
         }
 
         .subtitle {
-            color: #5f6368;
-            font-size: 16px;
+            color: #6b7280;
+            font-size: 15px;
+            font-weight: 500;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .stats-bar {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: right;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Watch Rules Section - Prominent */
+        .watch-rules-section {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #1f2937;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-create-rule {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-create-rule:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .rule-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .rule-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .rule-card-basic {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .rule-type-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .rule-description {
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            opacity: 0.95;
+        }
+
+        .rule-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .rule-active {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .match-badge {
+            background: rgba(255,255,255,0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .match-badge.has-matches {
+            background: #fbbf24;
+            color: #78350f;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Knowledge Graph - Hero */
+        .graph-section {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+        }
+
+        #graph {
+            width: 100%;
+            height: 550px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .graph-controls select, .graph-controls button {
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .graph-controls select:hover, .graph-controls button:hover {
+            border-color: #667eea;
+        }
+
+        .graph-legend {
+            margin-top: 18px;
+            padding: 18px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .legend-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Q&A and Insights Section */
+        .dual-section {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
         }
 
         .card {
             background: white;
             padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .card h2 {
-            color: #1a73e8;
-            font-size: 20px;
-            margin-bottom: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
 
         .question-input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e8eaed;
-            border-radius: 8px;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
             font-size: 16px;
             margin-bottom: 15px;
             transition: border-color 0.3s;
+            font-family: inherit;
         }
 
         .question-input:focus {
             outline: none;
-            border-color: #1a73e8;
+            border-color: #667eea;
         }
 
         .btn {
-            background: #1a73e8;
+            background: #667eea;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
 
         .btn:hover {
-            background: #1557b0;
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .btn:disabled {
-            background: #ccc;
+            background: #d1d5db;
             cursor: not-allowed;
+            transform: none;
+        }
+
+        .example-queries {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 2px solid #f3f4f6;
+        }
+
+        .example-queries-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .query-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-example {
+            background: #f9fafb;
+            color: #667eea;
+            border: 2px solid #e5e7eb;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .btn-example:hover {
+            background: #eef2ff;
+            border-color: #667eea;
+            transform: translateX(4px);
         }
 
         .answer-box {
-            background: #f8f9fa;
+            background: #f9fafb;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-top: 20px;
-            min-height: 100px;
+            min-height: 120px;
             display: none;
+            border: 2px solid #e5e7eb;
         }
 
         .answer-box.visible {
@@ -115,64 +383,184 @@
 
         .confidence-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
             margin-left: 10px;
         }
 
         .confidence-high {
-            background: #d4edda;
-            color: #155724;
+            background: #d1fae5;
+            color: #065f46;
         }
 
         .confidence-medium {
-            background: #fff3cd;
-            color: #856404;
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .confidence-low {
-            background: #f8d7da;
-            color: #721c24;
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-        .citations {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e8eaed;
+        /* Insights Card */
+        .insights-grid {
+            display: grid;
+            gap: 16px;
         }
 
-        .citation {
-            display: inline-block;
-            background: #e8f0fe;
-            color: #1a73e8;
-            padding: 4px 10px;
-            border-radius: 6px;
-            margin: 4px;
+        .insight-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .insight-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .insight-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        /* Corpus Section - Bottom */
+        .corpus-section {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .papers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .paper-card {
+            padding: 18px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .paper-card:hover {
+            background: #eef2ff;
+            transform: translateX(4px);
+        }
+
+        .paper-title {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .paper-authors {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .paper-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Category sections for collapsible papers */
+        .category-section {
+            margin-bottom: 20px;
+        }
+
+        .category-header {
+            cursor: pointer;
+            background: #f9fafb;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .category-header:hover {
+            background: #eef2ff;
+            border-color: #667eea;
+        }
+
+        .category-papers {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .category-papers table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-left: 12px;
+            margin-bottom: 16px;
+        }
+
+        .category-papers table thead tr {
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .category-papers table th {
+            text-align: left;
+            padding: 12px 8px;
+            font-weight: 600;
+            color: #5f6368;
             font-size: 13px;
         }
 
-        #graph {
-            width: 100%;
-            height: 500px;
-            border: 2px solid #e8eaed;
-            border-radius: 8px;
+        .category-papers table td {
+            padding: 12px 8px;
         }
 
-        .full-width {
-            grid-column: 1 / -1;
+        .category-papers table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .category-papers table tbody tr:hover {
+            background: #f9fafb;
         }
 
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1a73e8;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-left: 10px;
         }
 
         @keyframes spin {
@@ -181,78 +569,71 @@
         }
 
         .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            border-left: 4px solid #dc2626;
         }
 
-        .papers-list {
-            max-height: 400px;
-            overflow-y: auto;
+        /* Upload Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
         }
 
-        .paper-item {
-            padding: 15px;
-            border-bottom: 1px solid #e8eaed;
-        }
-
-        .paper-item:last-child {
-            border-bottom: none;
-        }
-
-        .paper-title {
-            font-weight: 600;
-            color: #1a73e8;
-            margin-bottom: 5px;
-        }
-
-        .paper-authors {
-            font-size: 14px;
-            color: #5f6368;
-        }
-
-        .tab-nav {
+        .modal.active {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e8eaed;
+            align-items: center;
+            justify-content: center;
         }
 
-        .tab-button {
+        .modal-content {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .btn-close {
             background: none;
             border: none;
-            padding: 12px 20px;
+            font-size: 28px;
             cursor: pointer;
-            font-size: 15px;
-            color: #5f6368;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
+            color: #9ca3af;
+            line-height: 1;
         }
 
-        .tab-button.active {
-            color: #1a73e8;
-            border-bottom-color: #1a73e8;
-            font-weight: 600;
-        }
-
-        .tab-button:hover {
-            color: #1a73e8;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
+        .btn-close:hover {
+            color: #4b5563;
         }
 
         .file-input-wrapper {
             position: relative;
             overflow: hidden;
-            display: inline-block;
             width: 100%;
         }
 
@@ -263,320 +644,376 @@
 
         .file-input-label {
             display: block;
-            padding: 15px;
-            background: #f8f9fa;
-            border: 2px dashed #e8eaed;
-            border-radius: 8px;
+            padding: 40px 20px;
+            background: #f9fafb;
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
         }
 
         .file-input-label:hover {
-            border-color: #1a73e8;
-            background: #e8f0fe;
+            border-color: #667eea;
+            background: #eef2ff;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #333;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #374151;
+            font-size: 14px;
         }
 
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #e8eaed;
-            border-radius: 6px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
             font-size: 14px;
+            font-family: inherit;
         }
 
-        .rule-item, .alert-item {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .rule-keywords {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
-        .keyword-tag {
-            background: #e8f0fe;
-            color: #1a73e8;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-        }
-
-        .alert-new {
-            border-left: 4px solid #1a73e8;
-        }
-
-        .graph-controls {
-            margin-bottom: 15px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .graph-controls select {
-            padding: 8px 12px;
-            border: 1px solid #e8eaed;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .btn-secondary {
-            background: #5f6368;
-        }
-
-        .btn-secondary:hover {
-            background: #3c4043;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 14px;
-        }
-
-        .example-queries {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #e8eaed;
-        }
-
-        .example-queries-label {
-            font-size: 13px;
-            color: #5f6368;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .query-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .btn-example {
-            background: #f8f9fa;
-            color: #1a73e8;
-            border: 1px solid #e8eaed;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-example:hover {
-            background: #e8f0fe;
-            border-color: #1a73e8;
-        }
-
-        .graph-legend {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e8eaed;
-        }
-
-        .legend-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .legend-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            font-size: 13px;
-            color: #5f6368;
-        }
-
-        .legend-color {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            margin-right: 6px;
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header with Live Stats -->
         <header>
-            <h1>🧠 Research Intelligence Platform</h1>
-            <p class="subtitle">Multi-agent AI system powered by Google ADK • Deployed on Cloud Run</p>
+            <div class="header-content">
+                <div>
+                    <h1>🧠 Research Intelligence Platform</h1>
+                    <p class="subtitle">Multi-agent AI powered by Google ADK • Deployed on Cloud Run</p>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statPapers">127</div>
+                        <div class="stat-label">Papers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statRelationships">342</div>
+                        <div class="stat-label">Relationships</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statAlerts">12</div>
+                        <div class="stat-label">Active Alerts</div>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <div class="grid">
-            <!-- Q&A Section -->
+        <!-- Watch Rules Section - Prominent -->
+        <div class="watch-rules-section">
+            <div class="section-header">
+                <h2 class="section-title">🔔 Watch Rules & Alerts</h2>
+                <button class="btn-create-rule" onclick="openCreateRuleModal()">+ Create New Rule</button>
+            </div>
+
+            <div class="rules-grid">
+                <!-- Natural Language Claims (3 examples) -->
+                <div class="rule-card">
+                    <div class="rule-type-badge">Natural Language Claim</div>
+                    <div class="rule-description">
+                        "Research advancing multimodal learning that combines vision, language, or other modalities to achieve new capabilities"
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge has-matches">🔥 2 new matches</span>
+                    </div>
+                </div>
+
+                <div class="rule-card">
+                    <div class="rule-type-badge">Natural Language Claim</div>
+                    <div class="rule-description">
+                        "Methods that enhance language model reasoning, planning, or problem-solving through novel prompting or inference strategies"
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge has-matches">🔥 2 new matches</span>
+                    </div>
+                </div>
+
+                <div class="rule-card">
+                    <div class="rule-type-badge">Natural Language Claim</div>
+                    <div class="rule-description">
+                        "Release of open-source foundation models that achieve competitive performance with closed-source alternatives"
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge has-matches">🔥 2 new matches</span>
+                    </div>
+                </div>
+
+                <!-- Author Tracking -->
+                <div class="rule-card rule-card-basic">
+                    <div class="rule-type-badge">Author Tracking</div>
+                    <div class="rule-description">
+                        Following publications by: Hugo Touvron, Shunyu Yao
+                    </div>
+                    <div class="rule-status">
+                        <span class="rule-active">✓ Active</span>
+                        <span class="match-badge">No new matches</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Graph - Hero -->
+        <div class="graph-section">
+            <div class="section-header">
+                <h2 class="section-title">🕸️ Knowledge Graph</h2>
+            </div>
+
+            <div class="graph-controls">
+                <select id="relationshipFilter" onchange="filterGraph()">
+                    <option value="all">All Relationships</option>
+                    <option value="supports">Supports Only</option>
+                    <option value="extends">Extends Only</option>
+                    <option value="contradicts">Contradicts Only</option>
+                </select>
+                <button onclick="resetGraphView()">📍 Fit to Screen</button>
+                <button onclick="togglePhysics()" id="togglePhysicsBtn">❄️ Freeze Graph</button>
+            </div>
+
+            <div id="graph"></div>
+
+            <div class="graph-legend">
+                <div class="legend-title">Node Colors (Paper Categories)</div>
+                <div class="legend-items" style="margin-bottom: 15px;">
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #FF6B6B;"></span> cs.AI - Artificial Intelligence
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #4ECDC4;"></span> cs.LG - Machine Learning
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #45B7D1;"></span> cs.CL - Computation & Language
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #FFA07A;"></span> cs.CV - Computer Vision
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #98D8C8;"></span> cs.MA - Multiagent Systems
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #F7DC6F;"></span> math.ST - Statistics Theory
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #BB8FCE;"></span> stat.ML - ML Statistics
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #95A5A6;"></span> Other Categories
+                    </span>
+                </div>
+                <div class="legend-title" style="margin-top: 15px;">Relationship Types (Edge Colors)</div>
+                <div class="legend-items">
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #2E7D32;"></span> Supports
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #1565C0;"></span> Extends
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color" style="background: #C62828;"></span> Contradicts
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q&A and Insights -->
+        <div class="dual-section">
             <div class="card">
-                <h2>💬 Ask a Question</h2>
+                <h2 class="section-title">💬 Ask Questions</h2>
                 <input
                     type="text"
                     id="questionInput"
                     class="question-input"
-                    placeholder="e.g., What is the Transformer architecture?"
+                    placeholder="Ask about papers, relationships, or research trends..."
                     onkeypress="if(event.key==='Enter') askQuestion()"
                 >
-                <button class="btn" onclick="askQuestion()" id="askBtn">Ask</button>
+                <button class="btn" onclick="askQuestion()" id="askBtn">Ask Question</button>
 
                 <div class="example-queries">
-                    <div class="example-queries-label">📋 Example Graph Queries:</div>
+                    <div class="example-queries-label">📋 Semantic Graph Queries</div>
                     <div class="query-buttons">
-                        <button class="btn-example" onclick="setQuestion('What are the most cited papers?');">Most Cited Papers</button>
-                        <button class="btn-example" onclick="setQuestion('Which papers cite the Transformer paper?');">Papers Citing Transformers</button>
-                        <button class="btn-example" onclick="setQuestion('Find papers that contradict the Transformer architecture');">Contradictions</button>
-                        <button class="btn-example" onclick="setQuestion('Show papers by David Silver');">Papers by Author</button>
-                        <button class="btn-example" onclick="setQuestion('Which papers extend the BERT model?');">Extensions of BERT</button>
+                        <button class="btn-example" onclick="setQuestion('What papers build on BERT?')">
+                            Papers building on BERT
+                        </button>
+                        <button class="btn-example" onclick="setQuestion('Which papers in NLP extend the Transformer architecture?')">
+                            Transformer extensions in NLP
+                        </button>
+                        <button class="btn-example" onclick="setQuestion('Show me papers that use reinforcement learning for game playing')">
+                            RL for game playing
+                        </button>
+                    </div>
+                </div>
+
+                <div class="example-queries" style="margin-top: 15px;">
+                    <div class="example-queries-label">📄 Content Analysis</div>
+                    <div class="query-buttons">
+                        <button class="btn-example" onclick="setQuestion('What technique does LoRA use to adapt large language models efficiently?')">
+                            LoRA adaptation technique
+                        </button>
+                        <button class="btn-example" onclick="setQuestion('How does chain-of-thought prompting improve language model reasoning?')">
+                            Chain-of-thought prompting
+                        </button>
                     </div>
                 </div>
 
                 <div id="answerBox" class="answer-box">
                     <div id="answerContent"></div>
-                    <div id="citationsBox" class="citations"></div>
+                    <div id="citationsBox" style="margin-top: 15px;"></div>
                 </div>
             </div>
 
-            <!-- Papers Section with Tabs -->
             <div class="card">
-                <h2>📚 Research Corpus</h2>
-
-                <div class="tab-nav">
-                    <button class="tab-button active" onclick="switchTab('papers-list-tab')">Papers</button>
-                    <button class="tab-button" onclick="switchTab('papers-upload-tab')">Upload</button>
-                    <button class="tab-button" onclick="switchTab('alerts-tab')">Alerts</button>
-                </div>
-
-                <!-- Papers List Tab -->
-                <div id="papers-list-tab" class="tab-content active">
-                    <div id="papersList" class="papers-list">
-                        <p style="color: #5f6368;">Loading papers...</p>
+                <h2 class="section-title">📊 Insights</h2>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <span class="insight-label">Total Papers</span>
+                        <span class="insight-value" id="insightPapers">127</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Relationships</span>
+                        <span class="insight-value" id="insightRelationships">342</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Most Cited</span>
+                        <span class="insight-value" style="font-size: 16px; text-align: right;">Attention Is All You Need</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Last Upload</span>
+                        <span class="insight-value" style="font-size: 16px;">2 hours ago</span>
                     </div>
                 </div>
-
-                <!-- Upload Tab -->
-                <div id="papers-upload-tab" class="tab-content">
-                    <div class="form-group">
-                        <label class="form-label">Upload arXiv PDF</label>
-                        <div class="file-input-wrapper">
-                            <input type="file" id="pdfFile" accept=".pdf" onchange="handleFileSelect(event)">
-                            <label for="pdfFile" class="file-input-label">
-                                <div>📄 Drop PDF here or click to browse</div>
-                                <div style="font-size: 12px; color: #5f6368; margin-top: 5px;">Supports arXiv research papers in PDF format</div>
-                            </label>
-                        </div>
-                        <div id="uploadStatus" style="margin-top: 10px;"></div>
-                    </div>
-                    <button class="btn" onclick="uploadPaper()" id="uploadBtn" disabled>Upload & Process</button>
-                </div>
-
-                <!-- Alerts Tab -->
-                <div id="alerts-tab" class="tab-content">
-                    <div id="alertsList">
-                        <p style="color: #5f6368;">Loading alerts...</p>
-                    </div>
-                </div>
+                <button class="btn btn-secondary" onclick="openUploadModal()">📄 Upload Paper</button>
+                <button class="btn btn-secondary" onclick="scrollToCorpus()">📚 Browse Full Corpus</button>
             </div>
+        </div>
 
-            <!-- Watch Rules Section -->
-            <div class="card">
-                <h2>🔔 Watch Rules</h2>
-
-                <div class="tab-nav">
-                    <button class="tab-button active" onclick="switchTab('rules-list-tab')">My Rules</button>
-                    <button class="tab-button" onclick="switchTab('rules-create-tab')">Create Rule</button>
-                </div>
-
-                <!-- Rules List Tab -->
-                <div id="rules-list-tab" class="tab-content active">
-                    <div id="rulesList" style="max-height: 400px; overflow-y: auto;">
-                        <p style="color: #5f6368;">Loading watch rules...</p>
-                    </div>
-                </div>
-
-                <!-- Create Rule Tab -->
-                <div id="rules-create-tab" class="tab-content">
-                    <div class="form-group">
-                        <label class="form-label">Rule Type</label>
-                        <select id="ruleType" class="form-input" onchange="updateRuleForm()">
-                            <option value="keyword">Keyword Matching</option>
-                            <option value="author">Author Tracking</option>
-                            <option value="claim">Natural Language Claim</option>
-                        </select>
-                    </div>
-
-                    <div id="ruleFormFields">
-                        <!-- Dynamic fields based on rule type -->
-                        <div class="form-group">
-                            <label class="form-label">Keywords (comma-separated)</label>
-                            <input type="text" id="ruleKeywords" class="form-input" placeholder="e.g., transformer, neural, reinforcement">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Your Email</label>
-                        <input type="email" id="ruleEmail" class="form-input" placeholder="your@email.com">
-                    </div>
-
-                    <button class="btn" onclick="createWatchRule()" id="createRuleBtn">Create Alert Rule</button>
-                </div>
+        <!-- Corpus Section - Bottom -->
+        <div class="corpus-section" id="corpusSection">
+            <div class="section-header">
+                <h2 class="section-title">📚 Research Corpus</h2>
             </div>
-
-            <!-- Knowledge Graph Section -->
-            <div class="card full-width">
-                <h2>🕸️ Knowledge Graph</h2>
-
-                <div class="graph-controls">
-                    <select id="relationshipFilter" onchange="filterGraph()">
-                        <option value="all">All Relationships</option>
-                        <option value="supports">Supports Only</option>
-                        <option value="extends">Extends Only</option>
-                        <option value="contradicts">Contradicts Only</option>
-                    </select>
-                    <button class="btn btn-small" onclick="resetGraphView()">Fit to Screen</button>
-                    <button class="btn btn-small btn-secondary" onclick="togglePhysics()" id="togglePhysicsBtn">Freeze Graph</button>
-                </div>
-
-                <div id="graph"></div>
-
-                <div class="graph-legend">
-                    <div class="legend-title">Category Legend:</div>
-                    <div class="legend-items">
-                        <span class="legend-item"><span class="legend-color" style="background: #FF6B6B;"></span> cs.AI</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #4ECDC4;"></span> cs.LG</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #45B7D1;"></span> cs.CL</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #FFA07A;"></span> cs.CV</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #98D8C8;"></span> cs.MA</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #F7DC6F;"></span> math.ST</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #BB8FCE;"></span> stat.ML</span>
-                        <span class="legend-item"><span class="legend-color" style="background: #85C1E2;"></span> stat.CO</span>
-                    </div>
-                </div>
+            <div id="papersList">
+                <p style="color: #6b7280;">Loading papers...</p>
             </div>
         </div>
     </div>
 
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Upload Research Paper</h3>
+                <button class="btn-close" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Select PDF File</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="pdfFile" accept=".pdf" onchange="handleFileSelect(event)">
+                    <label for="pdfFile" class="file-input-label">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📄</div>
+                        <div style="font-weight: 600;">Drop PDF here or click to browse</div>
+                        <div style="font-size: 13px; color: #6b7280; margin-top: 8px;">Supports arXiv research papers</div>
+                    </label>
+                </div>
+                <div id="uploadStatus" style="margin-top: 12px;"></div>
+            </div>
+            <button class="btn" onclick="uploadPaper()" id="uploadBtn" disabled style="width: 100%;">Upload & Process</button>
+        </div>
+    </div>
+
+    <!-- Create Rule Modal -->
+    <div id="createRuleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Watch Rule</h3>
+                <button class="btn-close" onclick="closeCreateRuleModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Rule Type</label>
+                <select id="ruleType" class="form-select" onchange="updateRuleForm()">
+                    <option value="claim">Natural Language Claim</option>
+                    <option value="keyword">Keyword Matching</option>
+                    <option value="author">Author Tracking</option>
+                </select>
+            </div>
+            <div id="ruleFormFields">
+                <div class="form-group">
+                    <label class="form-label">Describe what you're looking for</label>
+                    <input type="text" id="ruleClaim" class="form-input"
+                           placeholder="e.g., Papers showing performance improvements through architectural innovations">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Your Email</label>
+                <input type="email" id="ruleEmail" class="form-input" placeholder="your@email.com">
+            </div>
+            <button class="btn" onclick="createWatchRule()" id="createRuleBtn" style="width: 100%;">Create Rule</button>
+        </div>
+    </div>
+
     <script src="app.js"></script>
+    <script>
+        // Modal functions
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+        }
+        function openCreateRuleModal() {
+            document.getElementById('createRuleModal').classList.add('active');
+        }
+        function closeCreateRuleModal() {
+            document.getElementById('createRuleModal').classList.remove('active');
+        }
+        function scrollToCorpus() {
+            document.getElementById('corpusSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Update rule form based on type
+        function updateRuleForm() {
+            const ruleType = document.getElementById('ruleType').value;
+            const fieldsDiv = document.getElementById('ruleFormFields');
+
+            if (ruleType === 'claim') {
+                fieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Describe what you're looking for</label>
+                        <input type="text" id="ruleClaim" class="form-input"
+                               placeholder="e.g., Papers showing performance improvements through architectural innovations">
+                    </div>
+                `;
+            } else if (ruleType === 'keyword') {
+                fieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Keywords (comma-separated)</label>
+                        <input type="text" id="ruleKeywords" class="form-input"
+                               placeholder="e.g., transformer, attention, neural">
+                    </div>
+                `;
+            } else if (ruleType === 'author') {
+                fieldsDiv.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Author Name</label>
+                        <input type="text" id="ruleAuthor" class="form-input"
+                               placeholder="e.g., Geoffrey Hinton">
+                    </div>
+                `;
+            }
+        }
+    </script>
 </body>
 </html>

@@ -1,25 +1,17 @@
-FROM python:3.11-slim
+# Intake Pipeline Service Dockerfile
+# Uses pre-built base image for faster builds
 
-WORKDIR /app
+FROM gcr.io/research-intel-agents/base:latest
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Copy all source code (dependencies already installed in base)
+COPY src/ ./src/
 
-# Copy entire source tree (needed for imports)
-COPY . .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
+# Environment variables
 ENV PORT=8080
+ENV PYTHONUNBUFFERED=1
 
 # Expose port
 EXPOSE 8080
 
-# Run the intake pipeline service
+# Run Intake Pipeline Service
 CMD ["python", "-m", "src.services.intake_pipeline.main"]

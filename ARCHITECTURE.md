@@ -6,77 +6,85 @@ The Research Intelligence Platform is a multi-agent AI system built on Google's 
 
 ## System Architecture
 
+**Technologies**: Google Cloud Run, Python, Flask, Nginx, D3.js, Google ADK, Gemini 2.5 Pro, Firestore, Cloud Storage, Pub/Sub, SendGrid
+
 ```mermaid
 graph TB
-    subgraph "User Layer"
-        User[User Browser]
+    subgraph ul["<b style='font-size:16px'>User Layer</b>"]
+        User["<b>User Browser</b><br/>HTML/CSS/JavaScript + D3.js"]
     end
 
-    subgraph "Cloud Run Services"
-        Frontend[Frontend Service<br/>Nginx + Static HTML/JS]
-        APIGateway[API Gateway<br/>Flask - Port 8080]
-        Orchestrator[Orchestrator Service<br/>Flask - Port 8081]
-        GraphService[Graph Service<br/>Flask - Port 8082]
+    subgraph cr["<b style='font-size:16px'>Google Cloud Run Services - Python/Flask</b>"]
+        Frontend["<b>Frontend Service</b><br/>Nginx + Static HTML/JS<br/>D3.js Graph Viz"]
+        APIGateway["<b>API Gateway</b><br/>Python Flask - Port 8080"]
+        Orchestrator["<b>Orchestrator Service</b><br/>Python Flask - Port 8081"]
+        GraphService["<b>Graph Service</b><br/>Python Flask - Port 8082"]
     end
 
-    subgraph "Cloud Jobs"
-        ArxivWatcher[ArXiv Watcher<br/>Daily Job]
-        GraphUpdater[Graph Updater<br/>Periodic Job]
-        IntakePipeline[Intake Pipeline<br/>On-Demand Job]
-        AlertWorker[Alert Worker<br/>Periodic Job]
+    subgraph jw["<b style='font-size:16px'>Google Cloud Run Jobs & Workers - Python</b>"]
+        ArxivWatcher["<b>ArXiv Watcher</b><br/>Daily Job - Python"]
+        GraphUpdater["<b>Graph Updater</b><br/>Periodic Job - Python"]
+        IntakePipeline["<b>Intake Pipeline</b><br/>On-Demand Job - Python"]
+        AlertWorker["<b>Alert Worker</b><br/>Service - Pub/Sub Consumer"]
     end
 
-    subgraph "Google Cloud Storage"
-        Firestore[(Firestore<br/>Document Database)]
-        CloudStorage[Cloud Storage<br/>PDF Files]
+    subgraph ai["<b style='font-size:16px'>AI Agents (Google ADK)</b>"]
+        EntityAgent["<b>Entity Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        RelAgent["<b>Relationship Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        GraphQueryAgent["<b>Graph Query Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        AnswerAgent["<b>Answer Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        ConfAgent["<b>Confidence Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        AlertAgent["<b>Alert Matching Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
     end
 
-    subgraph "AI Agents - Google ADK"
-        QAAgent[QA Agent<br/>gemini-2.0-flash]
-        SummaryAgent[Summary Agent<br/>gemini-2.0-flash]
-        RelAgent[Relationship Agent<br/>gemini-2.5-pro]
-        ConfAgent[Confidence Agent<br/>gemini-2.0-flash]
-        AlertAgent[Alert Matching Agent<br/>gemini-2.0-flash]
+    subgraph gcp["<b style='font-size:16px'>Storage & Messaging</b>"]
+        Firestore[("<b>Firestore NoSQL</b><br/>Document Database")]
+        CloudStorage["<b>Cloud Storage</b><br/>PDF Files"]
+        PubSubCandidates["<b>Pub/Sub Topic</b><br/>arxiv.candidates"]
+        PubSubMatches["<b>Pub/Sub Topic</b><br/>arxiv.matches"]
     end
 
-    subgraph "External Services"
-        ArxivAPI[arXiv API]
-        SendGrid[SendGrid Email API]
+    subgraph ext["<b style='font-size:16px'>External APIs</b>"]
+        ArxivAPI["<b>arXiv API</b><br/>Research Paper Metadata"]
+        SendGrid["<b>SendGrid API</b><br/>Email Delivery"]
     end
 
-    User --> Frontend
-    Frontend --> APIGateway
-    APIGateway --> Orchestrator
-    APIGateway --> GraphService
+    User ==> Frontend
+    Frontend ==> APIGateway
+    APIGateway ==> Orchestrator
+    APIGateway ==> GraphService
 
-    Orchestrator --> QAAgent
-    Orchestrator --> SummaryAgent
-    Orchestrator --> Firestore
+    Orchestrator ==> AnswerAgent
+    Orchestrator ==> ConfAgent
+    Orchestrator ==> GraphQueryAgent
+    Orchestrator ==> Firestore
 
-    GraphService --> Firestore
+    GraphService ==> Firestore
 
-    ArxivWatcher --> ArxivAPI
-    ArxivWatcher --> IntakePipeline
+    ArxivWatcher ==> ArxivAPI
+    ArxivWatcher ==> PubSubCandidates
+    PubSubCandidates ==> IntakePipeline
 
-    IntakePipeline --> CloudStorage
-    IntakePipeline --> SummaryAgent
-    IntakePipeline --> Firestore
+    IntakePipeline ==> CloudStorage
+    IntakePipeline ==> EntityAgent
+    IntakePipeline ==> AlertAgent
+    IntakePipeline ==> Firestore
+    IntakePipeline ==> PubSubMatches
 
-    GraphUpdater --> RelAgent
-    GraphUpdater --> ConfAgent
-    GraphUpdater --> Firestore
+    GraphUpdater ==> RelAgent
+    GraphUpdater ==> Firestore
 
-    AlertWorker --> AlertAgent
-    AlertWorker --> Firestore
-    AlertWorker --> SendGrid
+    PubSubMatches ==> AlertWorker
+    AlertWorker ==> SendGrid
 
     style Frontend fill:#e3f2fd
     style APIGateway fill:#e8f5e9
     style Orchestrator fill:#fff3e0
     style GraphService fill:#fce4ec
-    style QAAgent fill:#f3e5f5
-    style SummaryAgent fill:#f3e5f5
+    style EntityAgent fill:#f3e5f5
     style RelAgent fill:#f3e5f5
+    style GraphQueryAgent fill:#f3e5f5
+    style AnswerAgent fill:#f3e5f5
     style ConfAgent fill:#f3e5f5
     style AlertAgent fill:#f3e5f5
 ```
@@ -91,17 +99,26 @@ sequenceDiagram
     participant Frontend
     participant APIGateway
     participant Orchestrator
-    participant Storage as Cloud Storage
-    participant Summary as Summary Agent
+    participant PubSub as Pub/Sub (arxiv.candidates)
+    participant IntakePipeline as Intake Pipeline Job
+    participant EntityAgent as Entity Agent
+    participant AlertAgent as Alert Matching Agent
     participant Firestore
+    participant PubSubMatches as Pub/Sub (arxiv.matches)
 
     User->>Frontend: Upload PDF
     Frontend->>APIGateway: POST /api/upload
     APIGateway->>Orchestrator: Forward upload
-    Orchestrator->>Storage: Store PDF
-    Orchestrator->>Summary: Extract & summarize
-    Summary-->>Orchestrator: Summary + metadata
-    Orchestrator->>Firestore: Store paper document
+    Orchestrator->>Orchestrator: Extract arXiv ID from filename
+    Orchestrator->>PubSub: Publish paper + metadata
+    PubSub->>IntakePipeline: Trigger processing
+    IntakePipeline->>EntityAgent: Extract entities
+    EntityAgent-->>IntakePipeline: Title, authors, key findings
+    IntakePipeline->>AlertAgent: Match against watch rules
+    AlertAgent-->>IntakePipeline: Match results
+    IntakePipeline->>Firestore: Store paper document
+    IntakePipeline->>PubSubMatches: Publish alerts
+    IntakePipeline-->>Orchestrator: Success
     Orchestrator-->>APIGateway: Success response
     APIGateway-->>Frontend: Paper ID
     Frontend-->>User: Upload complete
@@ -115,16 +132,22 @@ sequenceDiagram
     participant Frontend
     participant APIGateway
     participant Orchestrator
-    participant QA as QA Agent
+    participant GraphQueryAgent as Graph Query Agent
     participant Firestore
+    participant AnswerAgent as Answer Agent
+    participant ConfAgent as Confidence Agent
 
     User->>Frontend: Ask question
     Frontend->>APIGateway: POST /api/ask
     APIGateway->>Orchestrator: Forward question
+    Orchestrator->>GraphQueryAgent: Translate to graph query
+    GraphQueryAgent-->>Orchestrator: Query parameters
     Orchestrator->>Firestore: Retrieve relevant papers
     Firestore-->>Orchestrator: Paper data
-    Orchestrator->>QA: Question + context
-    QA-->>Orchestrator: Answer + citations + confidence
+    Orchestrator->>AnswerAgent: Question + context
+    AnswerAgent-->>Orchestrator: Answer + citations
+    Orchestrator->>ConfAgent: Score confidence
+    ConfAgent-->>Orchestrator: Confidence score
     Orchestrator-->>APIGateway: Response
     APIGateway-->>Frontend: Answer data
     Frontend-->>User: Display answer
@@ -165,37 +188,94 @@ sequenceDiagram
     participant Scheduler as Cloud Scheduler
     participant ArxivWatcher
     participant ArxivAPI
-    participant IntakePipeline
-    participant AlertWorker
-    participant AlertAgent
+    participant PubSub as Pub/Sub (arxiv.candidates)
+    participant IntakePipeline as Intake Pipeline Job
+    participant AlertAgent as Alert Matching Agent
     participant Firestore
+    participant PubSubMatches as Pub/Sub (arxiv.matches)
+    participant AlertWorker as Alert Worker Service
     participant SendGrid
     participant User
 
-    Scheduler->>ArxivWatcher: Daily trigger
+    Scheduler->>ArxivWatcher: Daily trigger (6am UTC)
     ArxivWatcher->>ArxivAPI: Fetch new papers
     ArxivAPI-->>ArxivWatcher: Paper metadata
 
     loop For each new paper
-        ArxivWatcher->>IntakePipeline: Process paper
+        ArxivWatcher->>PubSub: Publish paper metadata
+        PubSub->>IntakePipeline: Trigger processing
         IntakePipeline->>Firestore: Store paper
-    end
+        IntakePipeline->>Firestore: Get active watch rules
 
-    Scheduler->>AlertWorker: Periodic trigger
-    AlertWorker->>Firestore: Get new papers
-    AlertWorker->>Firestore: Get watch rules
+        loop For each watch rule
+            IntakePipeline->>AlertAgent: Match paper to rule
+            AlertAgent-->>IntakePipeline: Match score + explanation
 
-    loop For each paper × rule
-        AlertWorker->>AlertAgent: Match paper to rule
-        AlertAgent-->>AlertWorker: Match score
-
-        alt Match found
-            AlertWorker->>Firestore: Create alert
-            AlertWorker->>SendGrid: Send email
-            SendGrid-->>User: Email notification
+            alt Match found
+                IntakePipeline->>Firestore: Create alert
+                IntakePipeline->>PubSubMatches: Publish alert data
+                PubSubMatches->>AlertWorker: Trigger email send
+                AlertWorker->>SendGrid: Send email notification
+                SendGrid-->>User: Email with paper details
+            end
         end
     end
 ```
+
+### 5. Manual Upload Flow with arXiv Metadata
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant APIGateway
+    participant Orchestrator
+    participant ArxivAPI
+    participant Storage as Cloud Storage
+    participant PubSub as Pub/Sub
+    participant IntakePipeline
+
+    User->>Frontend: Upload PDF (e.g., 2411.04997.pdf)
+    Frontend->>APIGateway: POST /api/upload
+    APIGateway->>Orchestrator: Forward upload
+
+    Orchestrator->>Orchestrator: Extract arXiv ID from filename
+    Note over Orchestrator: Regex: (\d{4}\.\d{4,5})(v\d+)?\.pdf
+
+    alt Valid arXiv ID found
+        Orchestrator->>ArxivAPI: Fetch metadata for 2411.04997
+        ArxivAPI-->>Orchestrator: Complete metadata (title, authors, abstract, categories)
+        Orchestrator->>Storage: Store PDF
+        Orchestrator->>PubSub: Publish to arxiv.candidates with metadata
+        PubSub->>IntakePipeline: Trigger ingestion
+        IntakePipeline->>IntakePipeline: Process with fetched metadata
+        IntakePipeline-->>Orchestrator: Success
+        Orchestrator-->>APIGateway: 200 OK
+    else Invalid filename
+        Orchestrator-->>APIGateway: 400 Bad Request
+    else Paper not found on arXiv
+        Orchestrator-->>APIGateway: 404 Not Found
+    end
+
+    APIGateway-->>Frontend: Response
+    Frontend-->>User: Upload complete or error
+```
+
+**Key Features**:
+- Automatic arXiv ID extraction from filename using regex pattern `(\d{4}\.\d{4,5})(v\d+)?\.pdf`
+- Fetches complete metadata from arXiv API using `arxiv` Python library
+- Retrieves: title, authors, abstract, categories, primary_category, published date, updated date, PDF URL
+- Error handling:
+  - Returns 400 if filename doesn't match arXiv pattern
+  - Returns 404 if paper not found on arXiv
+  - Returns 500 for arXiv API failures
+- Uses fetched metadata instead of PDF extraction for faster ingestion
+- Entity Agent still performs additional extraction and category inference
+
+**Implementation Files**:
+- `src/services/orchestrator/main.py` (lines 213-338): Upload endpoint
+- `src/utils/arxiv_fetcher.py`: arXiv ID extraction and API fetching
+- `src/pipelines/ingestion_pipeline.py` (lines 317-330): Enhanced alert data generation
 
 ## Component Details
 
@@ -224,6 +304,10 @@ sequenceDiagram
   - `ORCHESTRATOR_URL`: URL of Orchestrator service
   - `GRAPH_SERVICE_URL`: URL of Graph Service
   - `GOOGLE_CLOUD_PROJECT`: GCP project ID
+  - `GOOGLE_API_KEY`: Gemini API key (for agent operations)
+  - `DEFAULT_MODEL`: Model to use (default: gemini-2.5-pro)
+  - `FROM_EMAIL`: Email address for alert notifications
+  - `SENDGRID_API_KEY`: SendGrid API key (optional, for email delivery)
 
 #### 3. Orchestrator Service
 - **Technology**: Flask (Python)
@@ -280,74 +364,110 @@ sequenceDiagram
 - **Rate Limiting**: 60 requests/min to respect Gemini API limits
 
 #### 4. Alert Worker
-- **Schedule**: Periodic (e.g., hourly)
-- **Purpose**: Match new papers to watch rules and send alerts
+- **Architecture**: Cloud Run Service with Pub/Sub push subscription
+- **Pub/Sub Topic**: `arxiv.matches`
+- **Trigger**: Push subscription from Pub/Sub when alerts are created
+- **Purpose**: Send email notifications for paper matches
 - **Process**:
-  1. Fetch papers ingested since last run
-  2. Fetch all active watch rules
-  3. Match papers to rules using Alert Matching Agent
-  4. Create alert records in Firestore
-  5. Send email notifications via SendGrid
+  1. Receive push notification from Pub/Sub with alert data
+  2. Parse alert data from message payload
+  3. Generate enhanced email with:
+     - Category-specific subject line
+     - Match confidence percentage (color-coded)
+     - Key findings excerpt (truncated to 300 chars)
+     - Category name mapping (cs.AI → Artificial Intelligence)
+     - arXiv paper link
+  4. Send email via SendGrid API
+  5. Fallback to logging if SendGrid not configured
+  6. Return 200 OK on success, 500 on failure (Pub/Sub retries)
+- **Email Features**:
+  - HTML and plain text versions
+  - Confidence color coding: green (≥70%), orange (50-69%), gray (<50%)
+  - Direct arXiv paper links
+  - Unsubscribe information
+- **Note**: Alert matching is done by Intake Pipeline, not Alert Worker
 
 ### AI Agents (Google ADK)
 
-#### 1. QA Agent
-- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
-- **Purpose**: Answer questions about research corpus
-- **Input**: Question + relevant paper context
-- **Output**: Answer + citations + confidence score
-- **Features**:
-  - Multi-document reasoning
-  - Citation extraction
-  - Confidence scoring
+All agents use Google ADK primitives (LlmAgent, Runner, InMemorySessionService) and are ADK-compliant. The platform uses **6 specialized AI agents**:
 
-#### 2. Summary Agent
+#### 1. Entity Agent
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
-- **Purpose**: Extract and summarize paper content
+- **Purpose**: Extract entities and metadata from papers
 - **Input**: PDF text or arXiv abstract
 - **Output**:
   - Title
   - Authors
   - Abstract/Summary
   - Key findings
-  - Methodology
+  - Methods used
+  - Datasets mentioned
+  - Inferred arXiv category (LLM-based inference)
 - **Use Cases**:
   - Paper ingestion
-  - Preview generation
+  - Metadata enrichment
 
-#### 3. Relationship Agent
+#### 2. Relationship Agent
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Detect relationships between papers
 - **Input**: Two paper summaries/abstracts
 - **Output**:
-  - Relationship type: supports, contradicts, extends, none
+  - Relationship type: extends, supports, contradicts, cites, builds_on, applies
   - Evidence text
   - Relationship strength
 - **Relationship Types**:
+  - **Extends**: Builds upon or expands findings
   - **Supports**: Validates or confirms findings
   - **Contradicts**: Disputes or challenges findings
-  - **Extends**: Builds upon or expands findings
+  - **Cites**: References another paper
+  - **Builds_on**: Uses methods or ideas from another paper
+  - **Applies**: Applies techniques from another domain
+
+#### 3. Answer Agent
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
+- **Purpose**: Answer questions about research corpus
+- **Input**: Question + relevant paper context
+- **Output**: Answer with citations to source papers
+- **Features**:
+  - Multi-document reasoning
+  - Citation extraction
+  - Context-aware responses
 
 #### 4. Confidence Agent
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
-- **Purpose**: Score confidence in detected relationships
-- **Input**: Two papers + detected relationship + evidence
+- **Purpose**: Score confidence in Q&A answers
+- **Input**: Question + answer + paper context
 - **Output**: Confidence score (0.0 - 1.0)
 - **Factors**:
-  - Citation overlap
-  - Methodological similarity
-  - Temporal proximity
-  - Author overlap
+  - Source paper relevance
+  - Answer completeness
+  - Evidence strength
+  - Citation quality
 
-#### 5. Alert Matching Agent
+#### 5. Graph Query Agent
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
+- **Purpose**: Translate natural language to graph queries
+- **Input**: Natural language question + graph schema
+- **Output**: Structured graph query parameters
+- **Features**:
+  - Identifies relevant relationship types
+  - Determines traversal depth
+  - Extracts entity names and constraints
+- **Use Cases**:
+  - "Show papers that extend X"
+  - "Find contradictions to Y"
+  - "Papers influenced by Z"
+
+#### 6. Alert Matching Agent (ClaimMatcher)
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Match papers to user-defined watch rules
 - **Input**: Paper metadata + watch rule criteria
-- **Output**: Match score + explanation
+- **Output**: Match score (0.0-1.0) + explanation
 - **Rule Types**:
-  - Keyword matching
-  - Author tracking
-  - Natural language claims
+  - **Claim-based**: Natural language claims (e.g., "papers claiming MMLU improvements >2%")
+  - **Keyword**: Keyword matching with semantic understanding
+  - **Author**: Author name tracking
+  - **Relationship**: Papers with specific relationship types
 
 ### Data Storage
 
@@ -378,11 +498,14 @@ research-intelligence/
 │
 ├── watch_rules/
 │   └── {rule_id}
-│       ├── rule_type: enum(keyword|author|claim)
-│       ├── keywords: string[]  (for keyword rules)
-│       ├── author_name: string  (for author rules)
-│       ├── claim: string  (for claim rules)
-│       ├── user_email: string
+│       ├── name: string
+│       ├── rule_type: enum(claim|keyword|author|relationship|template)
+│       ├── claim_description: string  # for claim rules
+│       ├── keywords: string[]  # for keyword rules
+│       ├── authors: string[]  # for author rules (array instead of single)
+│       ├── user_email: string  # defaults to FROM_EMAIL if not provided
+│       ├── user_name: string
+│       ├── active: boolean
 │       └── created_at: timestamp
 │
 └── alerts/
@@ -390,8 +513,14 @@ research-intelligence/
         ├── paper_id: string
         ├── rule_id: string
         ├── match_score: float
-        ├── explanation: string
+        ├── match_reason: string  # renamed from explanation
         ├── user_email: string
+        ├── user_name: string  # NEW
+        ├── paper_title: string  # NEW
+        ├── paper_authors: string[]  # NEW
+        ├── arxiv_id: string  # NEW
+        ├── primary_category: string  # NEW
+        ├── key_finding: string  # NEW
         ├── sent_at: timestamp
         └── status: enum(pending|sent|failed)
 ```
@@ -560,7 +689,7 @@ graph LR
 2. **Model Selection**:
    - gemini-2.5-pro for all agents (configurable via DEFAULT_MODEL in .env)
    - Provides best quality results for hackathon demo
-   - Can be changed to gemini-2.0-flash for cost optimization in production
+   - Can be changed to gemini-2.0-flash-exp for cost optimization in production
 
 3. **Batch Processing**:
    - Relationship detection runs periodically, not per-paper

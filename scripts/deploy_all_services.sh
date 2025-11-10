@@ -102,6 +102,110 @@ GRAPH_SERVICE_URL=$(gcloud run services describe graph-service \
 echo "✓ Graph Service: $GRAPH_SERVICE_URL"
 echo ""
 
+# Deploy intake-pipeline
+echo "→ Building Intake Pipeline (using base image)..."
+gcloud builds submit \
+  --config src/services/intake_pipeline/cloudbuild.yaml \
+  --project $PROJECT_ID \
+  .
+
+echo "→ Deploying Intake Pipeline to Cloud Run..."
+gcloud run deploy intake-pipeline \
+  --image gcr.io/$PROJECT_ID/intake-pipeline:latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --allow-unauthenticated \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_API_KEY=$GOOGLE_API_KEY,DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-2.0-flash-exp}"
+
+# Ensure 100% traffic goes to latest revision
+gcloud run services update-traffic intake-pipeline \
+  --to-latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --quiet
+
+INTAKE_PIPELINE_URL=$(gcloud run services describe intake-pipeline \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --format='value(status.url)')
+echo "✓ Intake Pipeline: $INTAKE_PIPELINE_URL"
+echo ""
+
+# Deploy graph-updater
+echo "→ Building Graph Updater (using base image)..."
+gcloud builds submit \
+  --config src/services/graph_updater/cloudbuild.yaml \
+  --project $PROJECT_ID \
+  .
+
+echo "→ Deploying Graph Updater to Cloud Run..."
+gcloud run deploy graph-updater \
+  --image gcr.io/$PROJECT_ID/graph-updater:latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --allow-unauthenticated \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_API_KEY=$GOOGLE_API_KEY,DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-2.5-pro}"
+
+# Ensure 100% traffic goes to latest revision
+gcloud run services update-traffic graph-updater \
+  --to-latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --quiet
+
+GRAPH_UPDATER_URL=$(gcloud run services describe graph-updater \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --format='value(status.url)')
+echo "✓ Graph Updater: $GRAPH_UPDATER_URL"
+echo ""
+
+# Deploy alert-worker (Cloud Run Service - runs continuously)
+echo "→ Building Alert Worker (using base image)..."
+gcloud builds submit \
+  --config src/workers/alert_worker/cloudbuild.yaml \
+  --project $PROJECT_ID \
+  .
+
+echo "→ Deploying Alert Worker to Cloud Run..."
+gcloud run deploy alert-worker \
+  --image gcr.io/$PROJECT_ID/alert-worker:latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --allow-unauthenticated \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_API_KEY=$GOOGLE_API_KEY,SENDGRID_API_KEY=$SENDGRID_API_KEY,FROM_EMAIL=$FROM_EMAIL"
+
+# Ensure 100% traffic goes to latest revision
+gcloud run services update-traffic alert-worker \
+  --to-latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --quiet
+
+ALERT_WORKER_URL=$(gcloud run services describe alert-worker \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --format='value(status.url)')
+echo "✓ Alert Worker: $ALERT_WORKER_URL"
+echo ""
+
+# Deploy arxiv-watcher (Cloud Run Job - runs on schedule)
+echo "→ Building ArXiv Watcher (using base image)..."
+gcloud builds submit \
+  --config src/jobs/arxiv_watcher/cloudbuild.yaml \
+  --project $PROJECT_ID \
+  .
+
+echo "→ Deploying ArXiv Watcher as Cloud Run Job..."
+gcloud run jobs deploy arxiv-watcher \
+  --image gcr.io/$PROJECT_ID/arxiv-watcher:latest \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_API_KEY=$GOOGLE_API_KEY"
+
+echo "✓ ArXiv Watcher Job deployed (runs via Cloud Scheduler)"
+echo ""
+
 # Deploy api-gateway
 echo "→ Building API Gateway (using base image)..."
 gcloud builds submit \
@@ -193,15 +297,19 @@ echo "✅ Deployment Complete!"
 echo "================================================================"
 echo ""
 echo "Service URLs:"
-echo "  Frontend:      $FRONTEND_URL"
-echo "  API Gateway:   $API_GATEWAY_URL"
-echo "  Orchestrator:  $ORCHESTRATOR_URL"
-echo "  Graph Service: $GRAPH_SERVICE_URL"
+echo "  Frontend:        $FRONTEND_URL"
+echo "  API Gateway:     $API_GATEWAY_URL"
+echo "  Orchestrator:    $ORCHESTRATOR_URL"
+echo "  Graph Service:   $GRAPH_SERVICE_URL"
+echo "  Intake Pipeline: $INTAKE_PIPELINE_URL"
+echo "  Graph Updater:   $GRAPH_UPDATER_URL"
+echo "  Alert Worker:    $ALERT_WORKER_URL"
+echo "  ArXiv Watcher:   [Cloud Run Job - runs via Cloud Scheduler]"
 echo ""
 echo "🚀 Open your app: $FRONTEND_URL"
 echo ""
 echo "Performance:"
 echo "  • Backend services: ~30 seconds each (using base image)"
 echo "  • Frontend: ~2 minutes (Node.js build)"
-echo "  • Total: ~3-4 minutes"
+echo "  • Total: ~6-7 minutes (8 services + 1 job)"
 echo ""
