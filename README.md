@@ -269,7 +269,7 @@ Built for **Google Cloud Run Hackathon** - AI Agents Category
 **Requirements Met**:
 - ✅ Multi-agent application (6 specialized agents)
 - ✅ Google Gemini API integration
-- ✅ Deployed to Cloud Run (6 services + 2 jobs + 1 worker)
+- ✅ Deployed to Cloud Run (4 services + 3 jobs + 1 worker)
 - ✅ All 3 resource types: Services, Jobs, Workers
 - ✅ Solves real-world problem (research literature monitoring)
 - ✅ Agent collaboration (multi-agent orchestration)
