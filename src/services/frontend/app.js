@@ -232,10 +232,12 @@ async function askQuestion() {
         let citationsHtml = '';
 
         if (data.citations && data.citations.length > 0) {
-            citationsHtml += '<p><strong>Sources:</strong></p>';
+            citationsHtml += '<p style="margin-top: 0;"><strong>Sources:</strong></p>';
+            citationsHtml += '<ul style="margin-top: 10px; padding-left: 20px;">';
             data.citations.forEach(citation => {
-                citationsHtml += `<span class="citation">${citation}</span>`;
+                citationsHtml += `<li style="margin-bottom: 5px;">${citation}</li>`;
             });
+            citationsHtml += '</ul>';
         }
 
         // Show retrieved papers if available

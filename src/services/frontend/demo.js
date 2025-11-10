@@ -62,61 +62,62 @@ function generateSnapshotDates() {
 const SNAPSHOT_CONFIG = generateSnapshotDates();
 
 // Sample alerts data for Tab 3
-// These are based on REAL papers from the database (papers #42-49) matched to realistic watch rules
+// These are based on REAL papers from the database matched to relationship-based watch rules
+// The knowledge graph detected these papers extend foundational works the user is tracking
 const SAMPLE_ALERTS = [
     {
         new: true,
         timestamp: '3 hours ago',
-        rule: 'Multimodal Learning',
-        paperTitle: 'GPT-4 Technical Report',
-        authors: ['OpenAI'],
-        matchReason: 'This paper demonstrates a major advance in multimodal learning by combining vision and language capabilities. GPT-4 achieves human-level performance on professional benchmarks while accepting both image and text inputs. Matched claim: "Research advancing multimodal learning that combines vision, language, or other modalities to achieve new capabilities"',
-        matchScore: 0.94
+        rule: 'Extends: Chain-of-Thought Prompting',
+        paperTitle: 'Tree of Thoughts: Deliberate Problem Solving with Large Language Models',
+        authors: ['Shunyu Yao', 'Dian Yu', 'Jeffrey Zhao'],
+        matchReason: 'Knowledge graph detected this paper EXTENDS "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models". Tree of Thoughts builds upon chain-of-thought by enabling LLMs to explore multiple reasoning paths simultaneously and make deliberate decisions through lookahead and backtracking. Achieves 74% success on Game of 24 (vs 4% with standard chain-of-thought).',
+        matchScore: 0.92
     },
     {
         new: true,
         timestamp: '8 hours ago',
-        rule: 'Reasoning & Problem-Solving',
-        paperTitle: 'Tree of Thoughts: Deliberate Problem Solving with Large Language Models',
-        authors: ['Shunyu Yao', 'Dian Yu', 'Jeffrey Zhao'],
-        matchReason: 'Introduces a framework enabling LLMs to explore multiple reasoning paths and make deliberate decisions. Achieves 74% success on Game of 24 (vs 4% with chain-of-thought). Matched claim: "Methods that enhance language model reasoning, planning, or problem-solving through novel prompting or inference strategies"',
-        matchScore: 0.96
+        rule: 'Extends: Chain-of-Thought Prompting',
+        paperTitle: 'ReAct: Synergizing Reasoning and Acting in Language Models',
+        authors: ['Shunyu Yao', 'Jeffrey Zhao', 'Dian Yu'],
+        matchReason: 'Knowledge graph detected this paper EXTENDS "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models". ReAct extends chain-of-thought prompting by interleaving reasoning traces with task-specific actions, enabling dynamic interaction with external environments (e.g., Wikipedia API). Combines reasoning and acting to solve knowledge-intensive and decision-making tasks.',
+        matchScore: 0.90
     },
     {
         new: true,
         timestamp: '1 day ago',
-        rule: 'Open-Source Foundation Models',
-        paperTitle: 'Llama 2: Open Foundation and Fine-Tuned Chat Models',
-        authors: ['Hugo Touvron', 'Louis Martin', 'Kevin Stone'],
-        matchReason: 'Introduces Llama 2, a collection of open-source models (7B-70B parameters) that outperform other open-source chat models on most benchmarks. Matched claim: "Release of open-source foundation models that achieve competitive performance with closed-source alternatives"',
-        matchScore: 0.93
+        rule: 'Extends: Language Models are Few-Shot Learners',
+        paperTitle: 'GPT-4 Technical Report',
+        authors: ['OpenAI'],
+        matchReason: 'Knowledge graph detected this paper EXTENDS "Language Models are Few-Shot Learners" (GPT-3). GPT-4 advances the few-shot learning paradigm introduced by GPT-3 by adding multimodal capabilities (accepting both image and text inputs) and achieving human-level performance on professional academic benchmarks. Demonstrates stronger reasoning, factuality, and steerability compared to GPT-3.',
+        matchScore: 0.94
     },
     {
         new: false,
         timestamp: '2 days ago',
-        rule: 'Multimodal Learning',
-        paperTitle: 'Visual Instruction Tuning',
-        authors: ['Haotian Liu', 'Chunyuan Li', 'Qingyang Wu'],
-        matchReason: 'Introduces LLaVA, connecting vision encoders with LLMs through instruction-following data. Demonstrates strong multimodal chat capabilities. Matched claim: "Research advancing multimodal learning that combines vision, language, or other modalities to achieve new capabilities"',
-        matchScore: 0.91
+        rule: 'Extends: Visual Instruction Tuning',
+        paperTitle: 'GPT-4 Technical Report',
+        authors: ['OpenAI'],
+        matchReason: 'Knowledge graph detected this paper EXTENDS "Visual Instruction Tuning" (LLaVA). While LLaVA pioneered connecting vision encoders with LLMs through instruction-following data, GPT-4 takes multimodal instruction-following to production scale with human-level vision-language performance. Both papers advance the frontier of multimodal instruction tuning.',
+        matchScore: 0.88
     },
     {
         new: false,
         timestamp: '3 days ago',
-        rule: 'Reasoning & Problem-Solving',
+        rule: 'Extends: Chain-of-Thought Prompting',
         paperTitle: 'Reflexion: Language Agents with Verbal Reinforcement Learning',
         authors: ['Noah Shinn', 'Federico Cassano', 'Edward Berman'],
-        matchReason: 'Proposes agents that reflect on task feedback and store experiences in episodic memory to improve decision-making. Matched claim: "Methods that enhance language model reasoning, planning, or problem-solving through novel prompting or inference strategies"',
-        matchScore: 0.90
+        matchReason: 'Knowledge graph detected this paper EXTENDS "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models". Reflexion builds upon chain-of-thought by adding self-reflection - agents reflect on task feedback, store reflection traces in episodic memory, and improve decision-making over time through verbal reinforcement learning.',
+        matchScore: 0.89
     },
     {
         new: false,
         timestamp: '4 days ago',
-        rule: 'Open-Source Foundation Models',
-        paperTitle: 'LLaMA: Open and Efﬁcient Foundation Language Models',
-        authors: ['Hugo Touvron', 'Thibaut Lavril', 'Gautier Izacard'],
-        matchReason: 'Introduces LLaMA, a collection of foundation language models (7B-65B parameters) trained on publicly available datasets. Shows that smaller models trained on more data can achieve state-of-the-art results. Matched claim: "Release of open-source foundation models that achieve competitive performance with closed-source alternatives"',
-        matchScore: 0.89
+        rule: 'Author: Shunyu Yao',
+        paperTitle: 'ReAct: Synergizing Reasoning and Acting in Language Models',
+        authors: ['Shunyu Yao', 'Jeffrey Zhao', 'Dian Yu'],
+        matchReason: 'New paper by tracked author Shunyu Yao. Introduces ReAct, a framework that combines reasoning and acting for language models. This is the researcher\'s follow-up work after Tree of Thoughts, continuing to advance prompting strategies for complex reasoning tasks.',
+        matchScore: 1.00
     }
 ];
 
@@ -474,7 +475,22 @@ async function renderGraphSnapshot(snapshot) {
             };
         });
 
+        // Papers mentioned in watch rules (from Tab 1)
+        const watchRulePaperTitles = [
+            'Chain-of-Thought Prompting Elicits Reasoning in Large Language Models',
+            'Language Models are Few-Shot Learners',
+            'Visual Instruction Tuning'
+        ];
+
+        // Find watch rule paper IDs by matching titles
+        const watchRulePaperIds = allPapers
+            .filter(p => watchRulePaperTitles.some(title =>
+                p.title && p.title.toLowerCase().includes(title.toLowerCase().substring(0, 20))
+            ))
+            .map(p => p.paper_id);
+
         // Mark new papers with orange border and shadow
+        // Mark watch rule papers with purple border and shadow
         filteredNodes.forEach(node => {
             if (newPaperIds.includes(node.id)) {
                 // Override border color to orange for new papers
@@ -489,6 +505,19 @@ async function renderGraphSnapshot(snapshot) {
                     y: 0
                 };
                 node.isNew = true;
+            } else if (watchRulePaperIds.includes(node.id)) {
+                // Purple/blue border for watch rule papers
+                node.color.border = '#9C27B0';  // Purple
+                node.borderWidth = 4;
+                node.borderWidthSelected = 6;
+                node.shadow = {
+                    enabled: true,
+                    color: 'rgba(156, 39, 176, 0.6)',
+                    size: 12,
+                    x: 0,
+                    y: 0
+                };
+                node.isWatchRule = true;
             }
         });
 

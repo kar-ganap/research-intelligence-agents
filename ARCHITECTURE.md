@@ -6,74 +6,76 @@ The Research Intelligence Platform is a multi-agent AI system built on Google's 
 
 ## System Architecture
 
+**Technologies**: Google Cloud Run, Python, Flask, Nginx, D3.js, Google ADK, Gemini 2.5 Pro, Firestore, Cloud Storage, Pub/Sub, SendGrid
+
 ```mermaid
 graph TB
-    subgraph "User Layer"
-        User[User Browser]
+    subgraph ul["<b style='font-size:16px'>User Layer</b>"]
+        User["<b>User Browser</b><br/>HTML/CSS/JavaScript + D3.js"]
     end
 
-    subgraph "Cloud Run Services"
-        Frontend[Frontend Service<br/>Nginx + Static HTML/JS]
-        APIGateway[API Gateway<br/>Flask - Port 8080]
-        Orchestrator[Orchestrator Service<br/>Flask - Port 8081]
-        GraphService[Graph Service<br/>Flask - Port 8082]
+    subgraph cr["<b style='font-size:16px'>Google Cloud Run Services - Python/Flask</b>"]
+        Frontend["<b>Frontend Service</b><br/>Nginx + Static HTML/JS<br/>D3.js Graph Viz"]
+        APIGateway["<b>API Gateway</b><br/>Python Flask - Port 8080"]
+        Orchestrator["<b>Orchestrator Service</b><br/>Python Flask - Port 8081"]
+        GraphService["<b>Graph Service</b><br/>Python Flask - Port 8082"]
     end
 
-    subgraph "Cloud Jobs & Workers"
-        ArxivWatcher[ArXiv Watcher<br/>Daily Job]
-        GraphUpdater[Graph Updater<br/>Periodic Job]
-        IntakePipeline[Intake Pipeline<br/>On-Demand Job]
-        AlertWorker[Alert Worker<br/>Service - Pub/Sub Consumer]
+    subgraph jw["<b style='font-size:16px'>Google Cloud Run Jobs & Workers - Python</b>"]
+        ArxivWatcher["<b>ArXiv Watcher</b><br/>Daily Job - Python"]
+        GraphUpdater["<b>Graph Updater</b><br/>Periodic Job - Python"]
+        IntakePipeline["<b>Intake Pipeline</b><br/>On-Demand Job - Python"]
+        AlertWorker["<b>Alert Worker</b><br/>Service - Pub/Sub Consumer"]
     end
 
-    subgraph "Google Cloud Storage & Messaging"
-        Firestore[(Firestore<br/>Document Database)]
-        CloudStorage[Cloud Storage<br/>PDF Files]
-        PubSubCandidates[Pub/Sub<br/>arxiv.candidates]
-        PubSubMatches[Pub/Sub<br/>arxiv.matches]
+    subgraph ai["<b style='font-size:16px'>AI Agents (Google ADK)</b>"]
+        EntityAgent["<b>Entity Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        RelAgent["<b>Relationship Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        GraphQueryAgent["<b>Graph Query Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        AnswerAgent["<b>Answer Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        ConfAgent["<b>Confidence Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
+        AlertAgent["<b>Alert Matching Agent</b><br/>Google ADK LlmAgent<br/>Gemini 2.5 Pro"]
     end
 
-    subgraph "AI Agents - Google ADK"
-        EntityAgent[Entity Agent<br/>gemini-2.5-pro]
-        RelAgent[Relationship Agent<br/>gemini-2.5-pro]
-        GraphQueryAgent[Graph Query Agent<br/>gemini-2.5-pro]
-        AnswerAgent[Answer Agent<br/>gemini-2.5-pro]
-        ConfAgent[Confidence Agent<br/>gemini-2.5-pro]
-        AlertAgent[Alert Matching Agent<br/>gemini-2.5-pro]
+    subgraph gcp["<b style='font-size:16px'>Storage & Messaging</b>"]
+        Firestore[("<b>Firestore NoSQL</b><br/>Document Database")]
+        CloudStorage["<b>Cloud Storage</b><br/>PDF Files"]
+        PubSubCandidates["<b>Pub/Sub Topic</b><br/>arxiv.candidates"]
+        PubSubMatches["<b>Pub/Sub Topic</b><br/>arxiv.matches"]
     end
 
-    subgraph "External Services"
-        ArxivAPI[arXiv API]
-        SendGrid[SendGrid Email API]
+    subgraph ext["<b style='font-size:16px'>External APIs</b>"]
+        ArxivAPI["<b>arXiv API</b><br/>Research Paper Metadata"]
+        SendGrid["<b>SendGrid API</b><br/>Email Delivery"]
     end
 
-    User --> Frontend
-    Frontend --> APIGateway
-    APIGateway --> Orchestrator
-    APIGateway --> GraphService
+    User ==> Frontend
+    Frontend ==> APIGateway
+    APIGateway ==> Orchestrator
+    APIGateway ==> GraphService
 
-    Orchestrator --> AnswerAgent
-    Orchestrator --> ConfAgent
-    Orchestrator --> GraphQueryAgent
-    Orchestrator --> Firestore
+    Orchestrator ==> AnswerAgent
+    Orchestrator ==> ConfAgent
+    Orchestrator ==> GraphQueryAgent
+    Orchestrator ==> Firestore
 
-    GraphService --> Firestore
+    GraphService ==> Firestore
 
-    ArxivWatcher --> ArxivAPI
-    ArxivWatcher --> PubSubCandidates
-    PubSubCandidates --> IntakePipeline
+    ArxivWatcher ==> ArxivAPI
+    ArxivWatcher ==> PubSubCandidates
+    PubSubCandidates ==> IntakePipeline
 
-    IntakePipeline --> CloudStorage
-    IntakePipeline --> EntityAgent
-    IntakePipeline --> AlertAgent
-    IntakePipeline --> Firestore
-    IntakePipeline --> PubSubMatches
+    IntakePipeline ==> CloudStorage
+    IntakePipeline ==> EntityAgent
+    IntakePipeline ==> AlertAgent
+    IntakePipeline ==> Firestore
+    IntakePipeline ==> PubSubMatches
 
-    GraphUpdater --> RelAgent
-    GraphUpdater --> Firestore
+    GraphUpdater ==> RelAgent
+    GraphUpdater ==> Firestore
 
-    PubSubMatches --> AlertWorker
-    AlertWorker --> SendGrid
+    PubSubMatches ==> AlertWorker
+    AlertWorker ==> SendGrid
 
     style Frontend fill:#e3f2fd
     style APIGateway fill:#e8f5e9

@@ -85,7 +85,8 @@ def calculate_relevance_score(keywords: Set[str], paper: Dict) -> float:
     # Normalize by number of keywords to prevent bias toward many-keyword queries
     normalized_score = score / len(keywords) if keywords else 0.0
 
-    return normalized_score
+    # Cap at 1.0 to ensure relevance scores are in 0-1 range (for percentage display)
+    return min(normalized_score, 1.0)
 
 
 def keyword_search(
