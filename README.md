@@ -10,7 +10,7 @@ Multi-agent AI system for monitoring research literature, building knowledge gra
 
 ## 🎯 Project Overview
 
-This platform uses 7 specialized AI agents to:
+This platform uses 6 specialized AI agents to:
 - 📚 Automatically ingest and index research papers from arXiv
 - 🕸️ Build knowledge graphs showing paper relationships (150 relationships across 49 papers)
 - 🔔 Proactively alert researchers to relevant publications
@@ -38,11 +38,12 @@ This platform uses 7 specialized AI agents to:
 
 All agents use Google ADK primitives (LlmAgent, Runner, InMemorySessionService) with Gemini 2.5 Pro:
 
-- **Entity Agent** - Extracts authors, methods, datasets
+- **Entity Agent** - Extracts authors, methods, datasets, and infers arXiv category
 - **Relationship Agent** - Detects paper relationships: extends, supports, contradicts
-- **Graph Query Agent** - Translates natural language to graph queries
 - **Answer Agent** - Generates answers with citations
 - **Confidence Agent** - Scores answer confidence
+- **Graph Query Agent** - Translates natural language to graph queries
+- **Alert Matching Agent** - Matches papers to user watch rules with explanations
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture diagrams.
 
@@ -96,6 +97,8 @@ cp .env.example .env
 #   GOOGLE_CLOUD_PROJECT=your-project-id
 #   GOOGLE_API_KEY=your-gemini-api-key
 #   DEFAULT_MODEL=gemini-2.5-pro
+#   FROM_EMAIL=your-email@example.com  # For alert notifications
+#   SENDGRID_API_KEY=your-sendgrid-key  # Optional, for email delivery
 
 # 5. Verify setup
 python scripts/test_setup.py
@@ -264,7 +267,7 @@ See [docs/planning/IMPLEMENTATION_PLAN.md](docs/planning/IMPLEMENTATION_PLAN.md)
 Built for **Google Cloud Run Hackathon** - AI Agents Category
 
 **Requirements Met**:
-- ✅ Multi-agent application (7 specialized agents)
+- ✅ Multi-agent application (6 specialized agents)
 - ✅ Google Gemini API integration
 - ✅ Deployed to Cloud Run (6 services + 2 jobs + 1 worker)
 - ✅ All 3 resource types: Services, Jobs, Workers
@@ -285,7 +288,10 @@ Built for **Google Cloud Run Hackathon** - AI Agents Category
 
 ### 1. Intelligent Paper Ingestion
 - Automatic PDF download from arXiv
+- arXiv metadata fetching from arXiv API for manual uploads
+- Filename-based arXiv ID extraction (e.g., 2411.04997.pdf)
 - Entity extraction (authors, methods, datasets)
+- LLM-based arXiv category inference
 - Semantic indexing with embeddings
 - Metadata enrichment
 
@@ -303,10 +309,16 @@ Built for **Google Cloud Run Hackathon** - AI Agents Category
 - Click to view paper details
 
 ### 4. Proactive Alerting
-- User-defined interest profiles
+- User-defined interest profiles (claim-based, keyword, author, relationship)
 - Semantic matching with Gemini
+- Enhanced email notifications with:
+  - Paper category/field display
+  - Key findings excerpt
+  - Match confidence percentage with color coding
+  - More specific subject lines
 - Email notifications via SendGrid
 - Alert history tracking
+- Watch rules default to FROM_EMAIL if not specified
 
 ### 5. Q&A with Citations
 - Natural language question answering

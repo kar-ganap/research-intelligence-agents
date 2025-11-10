@@ -286,8 +286,14 @@ def watch_rules():
                 return jsonify({'error': 'Missing request body'}), 400
 
             # Validate required fields
-            if 'rule_type' not in data or 'user_email' not in data:
-                return jsonify({'error': 'Missing required fields: rule_type, user_email'}), 400
+            if 'rule_type' not in data:
+                return jsonify({'error': 'Missing required field: rule_type'}), 400
+
+            # Default user_email to FROM_EMAIL if not provided
+            if 'user_email' not in data or not data['user_email']:
+                from_email = os.environ.get('FROM_EMAIL', 'gkartik.extraneous@gmail.com')
+                data['user_email'] = from_email
+                logger.info(f"[API Gateway] Defaulting user_email to FROM_EMAIL: {from_email}")
 
             # Check for duplicate rules
             rules_ref = db.collection('watch_rules')

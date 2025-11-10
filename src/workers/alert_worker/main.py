@@ -70,8 +70,11 @@ def send_email_notification(alert_data: Dict) -> bool:
                 "paper_title": "...",
                 "paper_authors": [...],
                 "match_reason": "Matches your interest in 'neural networks'",
+                "match_score": 0.85,
                 "paper_id": "...",
-                "arxiv_id": "..."
+                "arxiv_id": "...",
+                "primary_category": "cs.LG",
+                "key_finding": "..."
             }
 
     Returns:
@@ -83,12 +86,35 @@ def send_email_notification(alert_data: Dict) -> bool:
         paper_title = alert_data.get('paper_title')
         authors = ', '.join(alert_data.get('paper_authors', [])[:3])
         match_reason = alert_data.get('match_reason')
+        match_score = alert_data.get('match_score', 0.0)
         arxiv_id = alert_data.get('arxiv_id')
+        primary_category = alert_data.get('primary_category', '')
+        key_finding = alert_data.get('key_finding', '')
 
         logger.info(f"Sending email to {user_email}: {paper_title[:50]}...")
 
-        # Prepare email content
-        subject = "New paper matches your research interests"
+        # Category name mapping
+        category_names = {
+            'cs.AI': 'Artificial Intelligence',
+            'cs.CL': 'Computation and Language',
+            'cs.CV': 'Computer Vision',
+            'cs.LG': 'Machine Learning',
+            'cs.MA': 'Multi-Agent Systems',
+            'math.ST': 'Statistics Theory',
+            'stat.ML': 'Machine Learning',
+            'stat.CO': 'Computation'
+        }
+        category_display = category_names.get(primary_category, primary_category) if primary_category else 'Computer Science'
+
+        # Create more specific subject line
+        subject = f"New {category_display} paper: {paper_title[:60]}{'...' if len(paper_title) > 60 else ''}"
+
+        # Truncate key finding for email (keep it concise)
+        key_finding_display = key_finding[:300] + '...' if len(key_finding) > 300 else key_finding
+
+        # Format confidence score
+        confidence_percent = int(match_score * 100)
+        confidence_color = '#10b981' if match_score >= 0.7 else '#f59e0b' if match_score >= 0.5 else '#6b7280'
 
         html_content = f"""
         <html>
@@ -101,7 +127,10 @@ def send_email_notification(alert_data: Dict) -> bool:
                 <h3 style="margin-top: 0; color: #1f2937;">{paper_title}</h3>
                 <p><strong>Authors:</strong> {authors}</p>
                 <p><strong>arXiv ID:</strong> {arxiv_id}</p>
+                {f'<p><strong>Category:</strong> {primary_category} ({category_display})</p>' if primary_category else ''}
+                <p><strong>Match Confidence:</strong> <span style="color: {confidence_color}; font-weight: bold;">{confidence_percent}%</span></p>
                 <p><strong>Why this matches:</strong> {match_reason}</p>
+                {f'<div style="margin-top: 15px; padding: 10px; background-color: #ffffff; border-left: 3px solid #2563eb;"><p style="margin: 0; color: #4b5563;"><strong>Key Finding:</strong> {key_finding_display}</p></div>' if key_finding else ''}
             </div>
 
             <p>
@@ -129,8 +158,12 @@ A new paper has been published that matches your research interests:
 Title: {paper_title}
 Authors: {authors}
 arXiv ID: {arxiv_id}
+{f'Category: {primary_category} ({category_display})' if primary_category else ''}
+Match Confidence: {confidence_percent}%
 
 Why this matches: {match_reason}
+
+{f'Key Finding: {key_finding_display}' if key_finding else ''}
 
 View on arXiv: https://arxiv.org/abs/{arxiv_id}
 

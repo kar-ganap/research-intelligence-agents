@@ -1,0 +1,19 @@
+steps:
+  # Build the Docker image using base image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/intake-pipeline:latest'
+      - '-f'
+      - 'src/services/intake_pipeline/Dockerfile'
+      - '.'
+
+  # Push the image to GCR
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/intake-pipeline:latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/intake-pipeline:latest'

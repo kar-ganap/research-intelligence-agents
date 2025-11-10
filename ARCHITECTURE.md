@@ -37,6 +37,7 @@ graph TB
         GraphQueryAgent[Graph Query Agent<br/>gemini-2.5-pro]
         AnswerAgent[Answer Agent<br/>gemini-2.5-pro]
         ConfAgent[Confidence Agent<br/>gemini-2.5-pro]
+        AlertAgent[Alert Matching Agent<br/>gemini-2.5-pro]
     end
 
     subgraph "External Services"
@@ -49,8 +50,9 @@ graph TB
     APIGateway --> Orchestrator
     APIGateway --> GraphService
 
-    Orchestrator --> QAAgent
-    Orchestrator --> SummaryAgent
+    Orchestrator --> AnswerAgent
+    Orchestrator --> ConfAgent
+    Orchestrator --> GraphQueryAgent
     Orchestrator --> Firestore
 
     GraphService --> Firestore
@@ -59,7 +61,8 @@ graph TB
     ArxivWatcher --> IntakePipeline
 
     IntakePipeline --> CloudStorage
-    IntakePipeline --> SummaryAgent
+    IntakePipeline --> EntityAgent
+    IntakePipeline --> RelAgent
     IntakePipeline --> Firestore
 
     GraphUpdater --> RelAgent
@@ -74,9 +77,10 @@ graph TB
     style APIGateway fill:#e8f5e9
     style Orchestrator fill:#fff3e0
     style GraphService fill:#fce4ec
-    style QAAgent fill:#f3e5f5
-    style SummaryAgent fill:#f3e5f5
+    style EntityAgent fill:#f3e5f5
     style RelAgent fill:#f3e5f5
+    style GraphQueryAgent fill:#f3e5f5
+    style AnswerAgent fill:#f3e5f5
     style ConfAgent fill:#f3e5f5
     style AlertAgent fill:#f3e5f5
 ```
@@ -197,6 +201,61 @@ sequenceDiagram
     end
 ```
 
+### 5. Manual Upload Flow with arXiv Metadata
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant APIGateway
+    participant Orchestrator
+    participant ArxivAPI
+    participant Storage as Cloud Storage
+    participant PubSub as Pub/Sub
+    participant IntakePipeline
+
+    User->>Frontend: Upload PDF (e.g., 2411.04997.pdf)
+    Frontend->>APIGateway: POST /api/upload
+    APIGateway->>Orchestrator: Forward upload
+
+    Orchestrator->>Orchestrator: Extract arXiv ID from filename
+    Note over Orchestrator: Regex: (\d{4}\.\d{4,5})(v\d+)?\.pdf
+
+    alt Valid arXiv ID found
+        Orchestrator->>ArxivAPI: Fetch metadata for 2411.04997
+        ArxivAPI-->>Orchestrator: Complete metadata (title, authors, abstract, categories)
+        Orchestrator->>Storage: Store PDF
+        Orchestrator->>PubSub: Publish to arxiv.candidates with metadata
+        PubSub->>IntakePipeline: Trigger ingestion
+        IntakePipeline->>IntakePipeline: Process with fetched metadata
+        IntakePipeline-->>Orchestrator: Success
+        Orchestrator-->>APIGateway: 200 OK
+    else Invalid filename
+        Orchestrator-->>APIGateway: 400 Bad Request
+    else Paper not found on arXiv
+        Orchestrator-->>APIGateway: 404 Not Found
+    end
+
+    APIGateway-->>Frontend: Response
+    Frontend-->>User: Upload complete or error
+```
+
+**Key Features**:
+- Automatic arXiv ID extraction from filename using regex pattern `(\d{4}\.\d{4,5})(v\d+)?\.pdf`
+- Fetches complete metadata from arXiv API using `arxiv` Python library
+- Retrieves: title, authors, abstract, categories, primary_category, published date, updated date, PDF URL
+- Error handling:
+  - Returns 400 if filename doesn't match arXiv pattern
+  - Returns 404 if paper not found on arXiv
+  - Returns 500 for arXiv API failures
+- Uses fetched metadata instead of PDF extraction for faster ingestion
+- Entity Agent still performs additional extraction and category inference
+
+**Implementation Files**:
+- `src/services/orchestrator/main.py` (lines 213-338): Upload endpoint
+- `src/utils/arxiv_fetcher.py`: arXiv ID extraction and API fetching
+- `src/pipelines/ingestion_pipeline.py` (lines 317-330): Enhanced alert data generation
+
 ## Component Details
 
 ### Cloud Run Services
@@ -224,6 +283,10 @@ sequenceDiagram
   - `ORCHESTRATOR_URL`: URL of Orchestrator service
   - `GRAPH_SERVICE_URL`: URL of Graph Service
   - `GOOGLE_CLOUD_PROJECT`: GCP project ID
+  - `GOOGLE_API_KEY`: Gemini API key (for agent operations)
+  - `DEFAULT_MODEL`: Model to use (default: gemini-2.5-pro)
+  - `FROM_EMAIL`: Email address for alert notifications
+  - `SENDGRID_API_KEY`: SendGrid API key (optional, for email delivery)
 
 #### 3. Orchestrator Service
 - **Technology**: Flask (Python)
@@ -280,74 +343,109 @@ sequenceDiagram
 - **Rate Limiting**: 60 requests/min to respect Gemini API limits
 
 #### 4. Alert Worker
-- **Schedule**: Periodic (e.g., hourly)
-- **Purpose**: Match new papers to watch rules and send alerts
+- **Architecture**: Pull-based Pub/Sub consumer with Flask health endpoint
+- **Pub/Sub Topic**: `arxiv.matches`
+- **Subscription**: `arxiv.matches-sub`
+- **Schedule**: Continuous (pulls messages as they arrive)
+- **Purpose**: Match papers to watch rules and send email notifications
 - **Process**:
-  1. Fetch papers ingested since last run
-  2. Fetch all active watch rules
-  3. Match papers to rules using Alert Matching Agent
-  4. Create alert records in Firestore
-  5. Send email notifications via SendGrid
+  1. Listen to Pub/Sub subscription for paper match events
+  2. Parse alert data from message
+  3. Generate enhanced email with:
+     - Category-specific subject line
+     - Match confidence percentage (color-coded)
+     - Key findings excerpt (truncated to 300 chars)
+     - Category name mapping (cs.AI → Artificial Intelligence)
+  4. Send email via SendGrid API
+  5. Fallback to logging if SendGrid not configured
+  6. Acknowledge message on success, nack on failure
+- **Email Features**:
+  - HTML and plain text versions
+  - Confidence color coding: green (≥70%), orange (50-69%), gray (<50%)
+  - arXiv paper links
+  - Unsubscribe information
 
 ### AI Agents (Google ADK)
 
-#### 1. QA Agent
-- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
-- **Purpose**: Answer questions about research corpus
-- **Input**: Question + relevant paper context
-- **Output**: Answer + citations + confidence score
-- **Features**:
-  - Multi-document reasoning
-  - Citation extraction
-  - Confidence scoring
+All agents use Google ADK primitives (LlmAgent, Runner, InMemorySessionService) and are ADK-compliant. The platform uses **6 specialized AI agents**:
 
-#### 2. Summary Agent
+#### 1. Entity Agent
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
-- **Purpose**: Extract and summarize paper content
+- **Purpose**: Extract entities and metadata from papers
 - **Input**: PDF text or arXiv abstract
 - **Output**:
   - Title
   - Authors
   - Abstract/Summary
   - Key findings
-  - Methodology
+  - Methods used
+  - Datasets mentioned
+  - Inferred arXiv category (LLM-based inference)
 - **Use Cases**:
   - Paper ingestion
-  - Preview generation
+  - Metadata enrichment
 
-#### 3. Relationship Agent
+#### 2. Relationship Agent
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Detect relationships between papers
 - **Input**: Two paper summaries/abstracts
 - **Output**:
-  - Relationship type: supports, contradicts, extends, none
+  - Relationship type: extends, supports, contradicts, cites, builds_on, applies
   - Evidence text
   - Relationship strength
 - **Relationship Types**:
+  - **Extends**: Builds upon or expands findings
   - **Supports**: Validates or confirms findings
   - **Contradicts**: Disputes or challenges findings
-  - **Extends**: Builds upon or expands findings
+  - **Cites**: References another paper
+  - **Builds_on**: Uses methods or ideas from another paper
+  - **Applies**: Applies techniques from another domain
+
+#### 3. Answer Agent
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
+- **Purpose**: Answer questions about research corpus
+- **Input**: Question + relevant paper context
+- **Output**: Answer with citations to source papers
+- **Features**:
+  - Multi-document reasoning
+  - Citation extraction
+  - Context-aware responses
 
 #### 4. Confidence Agent
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
-- **Purpose**: Score confidence in detected relationships
-- **Input**: Two papers + detected relationship + evidence
+- **Purpose**: Score confidence in Q&A answers
+- **Input**: Question + answer + paper context
 - **Output**: Confidence score (0.0 - 1.0)
 - **Factors**:
-  - Citation overlap
-  - Methodological similarity
-  - Temporal proximity
-  - Author overlap
+  - Source paper relevance
+  - Answer completeness
+  - Evidence strength
+  - Citation quality
 
-#### 5. Alert Matching Agent
+#### 5. Graph Query Agent
+- **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
+- **Purpose**: Translate natural language to graph queries
+- **Input**: Natural language question + graph schema
+- **Output**: Structured graph query parameters
+- **Features**:
+  - Identifies relevant relationship types
+  - Determines traversal depth
+  - Extracts entity names and constraints
+- **Use Cases**:
+  - "Show papers that extend X"
+  - "Find contradictions to Y"
+  - "Papers influenced by Z"
+
+#### 6. Alert Matching Agent (ClaimMatcher)
 - **Model**: gemini-2.5-pro (configurable via DEFAULT_MODEL)
 - **Purpose**: Match papers to user-defined watch rules
 - **Input**: Paper metadata + watch rule criteria
-- **Output**: Match score + explanation
+- **Output**: Match score (0.0-1.0) + explanation
 - **Rule Types**:
-  - Keyword matching
-  - Author tracking
-  - Natural language claims
+  - **Claim-based**: Natural language claims (e.g., "papers claiming MMLU improvements >2%")
+  - **Keyword**: Keyword matching with semantic understanding
+  - **Author**: Author name tracking
+  - **Relationship**: Papers with specific relationship types
 
 ### Data Storage
 
@@ -378,11 +476,14 @@ research-intelligence/
 │
 ├── watch_rules/
 │   └── {rule_id}
-│       ├── rule_type: enum(keyword|author|claim)
-│       ├── keywords: string[]  (for keyword rules)
-│       ├── author_name: string  (for author rules)
-│       ├── claim: string  (for claim rules)
-│       ├── user_email: string
+│       ├── name: string
+│       ├── rule_type: enum(claim|keyword|author|relationship|template)
+│       ├── claim_description: string  # for claim rules
+│       ├── keywords: string[]  # for keyword rules
+│       ├── authors: string[]  # for author rules (array instead of single)
+│       ├── user_email: string  # defaults to FROM_EMAIL if not provided
+│       ├── user_name: string
+│       ├── active: boolean
 │       └── created_at: timestamp
 │
 └── alerts/
@@ -390,8 +491,14 @@ research-intelligence/
         ├── paper_id: string
         ├── rule_id: string
         ├── match_score: float
-        ├── explanation: string
+        ├── match_reason: string  # renamed from explanation
         ├── user_email: string
+        ├── user_name: string  # NEW
+        ├── paper_title: string  # NEW
+        ├── paper_authors: string[]  # NEW
+        ├── arxiv_id: string  # NEW
+        ├── primary_category: string  # NEW
+        ├── key_finding: string  # NEW
         ├── sent_at: timestamp
         └── status: enum(pending|sent|failed)
 ```

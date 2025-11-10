@@ -181,6 +181,97 @@ Return the information as JSON."""
                 "raw_response": response_text
             }
 
+    def infer_arxiv_category(self, title: str, key_finding: str = "") -> str:
+        """
+        Infer the arXiv category from paper title and key finding.
+
+        Args:
+            title: Paper title
+            key_finding: Optional key finding text
+
+        Returns:
+            arXiv category code (e.g., "cs.LG", "cs.AI")
+        """
+        import asyncio
+        from google.adk.runners import Runner
+        from google.adk.sessions import InMemorySessionService
+        from google.genai import types
+
+        prompt = f"""Based on the following research paper title and summary, determine the most appropriate arXiv category.
+
+Title: {title}
+Summary: {key_finding[:500] if key_finding else "Not available"}
+
+Choose ONE category code from this list:
+- cs.AI: Artificial Intelligence
+- cs.CL: Computation and Language (NLP)
+- cs.CV: Computer Vision
+- cs.LG: Machine Learning
+- cs.MA: Multi-Agent Systems
+- math.ST: Statistics Theory
+- stat.ML: Machine Learning (Statistics)
+- stat.CO: Computation (Statistics)
+
+Return ONLY the category code (e.g., "cs.LG"), nothing else."""
+
+        async def run_inference():
+            """Run category inference asynchronously."""
+            session_service = InMemorySessionService()
+            session_id = f"category_infer_{uuid.uuid4().hex[:8]}"
+
+            session = await session_service.create_session(
+                app_name=APP_NAME,
+                user_id=DEFAULT_USER_ID,
+                session_id=session_id
+            )
+
+            runner = Runner(
+                agent=self.agent,
+                app_name=APP_NAME,
+                session_service=session_service
+            )
+
+            user_content = types.Content(
+                role='user',
+                parts=[types.Part(text=prompt)]
+            )
+
+            response_text = ""
+            async for event in runner.run_async(
+                user_id=DEFAULT_USER_ID,
+                session_id=session_id,
+                new_message=user_content
+            ):
+                if event.is_final_response() and event.content:
+                    response_text = event.content.parts[0].text
+                    break
+
+            return response_text.strip()
+
+        try:
+            category = asyncio.run(run_inference())
+
+            # Clean up response - remove markdown code blocks if present
+            category = category.strip()
+            if category.startswith("```"):
+                # Extract just the category code
+                lines = category.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if '.' in line and not line.startswith('{') and not line.startswith('```'):
+                        category = line
+                        break
+
+            # Validate category format (should be like "cs.LG", "cs.AI")
+            if category and '.' in category and len(category) < 20:
+                return category
+
+            # Default fallback
+            return "cs.LG"
+        except Exception:
+            # Default to Machine Learning on error
+            return "cs.LG"
+
     def extract_with_metadata(self, paper_text: str, pdf_metadata: Dict = None) -> Dict[str, any]:
         """
         Extract entities and merge with PDF metadata as fallback.

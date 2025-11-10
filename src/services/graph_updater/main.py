@@ -58,85 +58,11 @@ def get_firestore_client() -> FirestoreClient:
     return _firestore_client
 
 
-def detect_relationship(
-    source_paper: Dict,
-    target_paper: Dict,
-    skip_existing: bool = True
-) -> Dict:
-    """
-    Detect and store relationship between two papers.
-
-    Args:
-        source_paper: Source paper data
-        target_paper: Target paper data
-        skip_existing: Skip if relationship already exists
-
-    Returns:
-        Result dictionary
-    """
-    source_id = source_paper['paper_id']
-    target_id = target_paper['paper_id']
-
-    logger.info(f"Analyzing: {source_paper['title'][:40]}... → {target_paper['title'][:40]}...")
-
-    try:
-        firestore_client = get_firestore_client()
-        relationship_agent = get_relationship_agent()
-
-        # Check if relationship already exists
-        if skip_existing:
-            existing = firestore_client.get_relationship(source_id, target_id)
-            if existing:
-                logger.info(f"  ⏭️  Relationship already exists, skipping")
-                return {
-                    'status': 'skipped',
-                    'reason': 'already_exists'
-                }
-
-        # Detect relationship using ADK agent
-        result = relationship_agent.detect_relationship(
-            source_paper=source_paper,
-            target_paper=target_paper
-        )
-
-        if result.get('relationship_type'):
-            # Store relationship
-            relationship_data = {
-                'source_id': source_id,
-                'target_id': target_id,
-                'relationship_type': result['relationship_type'],
-                'confidence': result.get('confidence', 0.5),
-                'evidence': result.get('evidence', ''),
-                'created_at': firestore_client._get_timestamp()
-            }
-
-            firestore_client.store_relationship(relationship_data)
-
-            logger.info(f"  ✅ Found: {result['relationship_type']} (confidence: {result.get('confidence', 0):.2f})")
-            return {
-                'status': 'success',
-                'relationship_type': result['relationship_type'],
-                'confidence': result.get('confidence', 0.5)
-            }
-        else:
-            logger.info(f"  ⚪ No relationship detected")
-            return {
-                'status': 'no_relationship'
-            }
-
-    except Exception as e:
-        logger.error(f"  ❌ Error: {str(e)}")
-        return {
-            'status': 'error',
-            'error': str(e)
-        }
-
-
 def update_graph_for_paper(paper_id: str) -> Dict:
     """
     Update graph relationships for a specific paper.
 
-    Compares the paper against all other papers in the corpus.
+    Uses RelationshipAgent.detect_relationships_batch() which includes temporal validation.
 
     Args:
         paper_id: ID of the paper to process
@@ -148,6 +74,7 @@ def update_graph_for_paper(paper_id: str) -> Dict:
 
     try:
         firestore_client = get_firestore_client()
+        relationship_agent = get_relationship_agent()
 
         # Get the target paper
         papers = firestore_client.get_all_papers()
@@ -159,37 +86,66 @@ def update_graph_for_paper(paper_id: str) -> Dict:
                 'error': f'Paper not found: {paper_id}'
             }
 
-        # Compare against all other papers
+        # Get all other papers
+        other_papers = [p for p in papers if p['paper_id'] != paper_id]
+
+        if not other_papers:
+            logger.info(f"[Graph Updater] No other papers to compare against")
+            return {
+                'status': 'success',
+                'paper_id': paper_id,
+                'relationships_found': 0,
+                'relationships_skipped': 0,
+                'errors': 0
+            }
+
+        # Use detect_relationships_batch which includes temporal validation
+        logger.info(f"[Graph Updater] Detecting relationships with temporal validation...")
+        relationships = relationship_agent.detect_relationships_batch(
+            new_paper=target_paper,
+            existing_papers=other_papers,
+            min_confidence=0.6
+        )
+
+        # Store relationships that don't already exist
         relationships_found = 0
         relationships_skipped = 0
-        errors = 0
 
-        for other_paper in papers:
-            if other_paper['paper_id'] == paper_id:
+        for rel in relationships:
+            source_id = rel.get('source_paper_id')
+            target_id = rel.get('target_paper_id')
+
+            # Check if relationship already exists
+            existing = firestore_client.get_relationship_between_papers(source_id, target_id)
+            if existing:
+                logger.debug(f"  ⏭️  Relationship already exists: {source_id} → {target_id}")
+                relationships_skipped += 1
                 continue
 
-            # Check both directions
-            for source, target in [(target_paper, other_paper), (other_paper, target_paper)]:
-                result = detect_relationship(source, target, skip_existing=True)
+            # Store new relationship
+            relationship_data = {
+                'source_paper_id': source_id,
+                'target_paper_id': target_id,
+                'relationship_type': rel['relationship_type'],
+                'confidence': rel.get('confidence', 0.5),
+                'evidence': rel.get('evidence', ''),
+                'created_at': firestore_client._get_timestamp()
+            }
 
-                if result['status'] == 'success':
-                    relationships_found += 1
-                elif result['status'] == 'skipped':
-                    relationships_skipped += 1
-                elif result['status'] == 'error':
-                    errors += 1
+            firestore_client.store_relationship(relationship_data)
+            relationships_found += 1
+            logger.info(f"  ✅ Stored: {rel['relationship_type']} (confidence: {rel.get('confidence', 0):.2f})")
 
         logger.info(f"[Graph Updater] Complete for {paper_id}")
         logger.info(f"  Relationships found: {relationships_found}")
         logger.info(f"  Skipped (existing): {relationships_skipped}")
-        logger.info(f"  Errors: {errors}")
 
         return {
             'status': 'success',
             'paper_id': paper_id,
             'relationships_found': relationships_found,
             'relationships_skipped': relationships_skipped,
-            'errors': errors
+            'errors': 0
         }
 
     except Exception as e:
@@ -202,17 +158,19 @@ def update_graph_for_paper(paper_id: str) -> Dict:
 
 def update_full_graph() -> Dict:
     """
-    Update graph for all papers (full recomputation).
+    Update graph for all papers (full recomputation with temporal validation).
 
-    Used for scheduled full graph updates.
+    Used for scheduled full graph updates. Processes each paper against all others
+    using detect_relationships_batch() which includes temporal validation.
 
     Returns:
         Summary dictionary
     """
-    logger.info("[Graph Updater] Running full graph update")
+    logger.info("[Graph Updater] Running full graph update with temporal validation")
 
     try:
         firestore_client = get_firestore_client()
+        relationship_agent = get_relationship_agent()
 
         # Fetch all papers
         papers = firestore_client.get_all_papers()
@@ -224,39 +182,61 @@ def update_full_graph() -> Dict:
                 'message': 'Not enough papers for relationships'
             }
 
-        # Generate all unique pairs
+        # Process each paper against all others with temporal validation
         relationships_found = 0
         relationships_skipped = 0
-        errors = 0
-        pairs_processed = 0
+        papers_processed = 0
 
-        for i in range(len(papers)):
-            for j in range(i + 1, len(papers)):
-                source = papers[i]
-                target = papers[j]
+        for i, current_paper in enumerate(papers):
+            # Get all other papers
+            other_papers = [p for j, p in enumerate(papers) if j != i]
 
-                result = detect_relationship(source, target, skip_existing=True)
-                pairs_processed += 1
+            logger.info(f"[Graph Updater] Processing paper {i+1}/{len(papers)}: {current_paper['title'][:50]}...")
 
-                if result['status'] == 'success':
-                    relationships_found += 1
-                elif result['status'] == 'skipped':
+            # Use detect_relationships_batch which includes temporal validation
+            relationships = relationship_agent.detect_relationships_batch(
+                new_paper=current_paper,
+                existing_papers=other_papers,
+                min_confidence=0.6
+            )
+
+            # Store relationships that don't already exist
+            for rel in relationships:
+                source_id = rel.get('source_paper_id')
+                target_id = rel.get('target_paper_id')
+
+                # Check if relationship already exists
+                existing = firestore_client.get_relationship_between_papers(source_id, target_id)
+                if existing:
                     relationships_skipped += 1
-                elif result['status'] == 'error':
-                    errors += 1
+                    continue
+
+                # Store new relationship
+                relationship_data = {
+                    'source_paper_id': source_id,
+                    'target_paper_id': target_id,
+                    'relationship_type': rel['relationship_type'],
+                    'confidence': rel.get('confidence', 0.5),
+                    'evidence': rel.get('evidence', ''),
+                    'created_at': firestore_client._get_timestamp()
+                }
+
+                firestore_client.store_relationship(relationship_data)
+                relationships_found += 1
+
+            papers_processed += 1
 
         logger.info("[Graph Updater] Full graph update complete")
-        logger.info(f"  Pairs processed: {pairs_processed}")
+        logger.info(f"  Papers processed: {papers_processed}")
         logger.info(f"  Relationships found: {relationships_found}")
         logger.info(f"  Skipped (existing): {relationships_skipped}")
-        logger.info(f"  Errors: {errors}")
 
         return {
             'status': 'success',
-            'pairs_processed': pairs_processed,
+            'papers_processed': papers_processed,
             'relationships_found': relationships_found,
             'relationships_skipped': relationships_skipped,
-            'errors': errors
+            'errors': 0
         }
 
     except Exception as e:

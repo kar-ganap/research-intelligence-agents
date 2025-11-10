@@ -156,6 +156,40 @@ class IngestionPipeline:
                 "duration": time.time() - step_start
             }
 
+            # Step 2.5: Infer arXiv category if not provided
+            if not metadata.get("primary_category") and entities.get("title"):
+                logger.info("Step 2.5/3: Inferring arXiv category for manually uploaded paper")
+                step_start = time.time()
+
+                try:
+                    inferred_category = self.entity_agent.infer_arxiv_category(
+                        title=entities.get("title", ""),
+                        key_finding=entities.get("key_finding", "")
+                    )
+
+                    metadata["primary_category"] = inferred_category
+                    metadata["categories"] = [inferred_category]
+
+                    logger.info(f"Inferred category: {inferred_category}")
+
+                    result["steps"]["category_inference"] = {
+                        "success": True,
+                        "primary_category": inferred_category,
+                        "duration": time.time() - step_start
+                    }
+                except Exception as e:
+                    logger.warning(f"Category inference failed (non-blocking): {e}")
+                    # Default to Machine Learning
+                    metadata["primary_category"] = "cs.LG"
+                    metadata["categories"] = ["cs.LG"]
+
+                    result["steps"]["category_inference"] = {
+                        "success": False,
+                        "error": str(e),
+                        "default_category": "cs.LG",
+                        "duration": time.time() - step_start
+                    }
+
             # Step 3: Index to Firestore
             logger.info("Step 3/3: Indexing to Firestore")
             step_start = time.time()
@@ -287,8 +321,11 @@ class IngestionPipeline:
                                         'paper_title': entities.get('title', ''),
                                         'paper_authors': entities.get('authors', []),
                                         'match_reason': match_result.get('match_explanation', f"Matches your watch rule: {rule.get('name', 'unnamed')}"),
+                                        'match_score': match_result.get('match_score', 0.0),
                                         'paper_id': index_result['paper_id'],
-                                        'arxiv_id': paper_data.get('arxiv_id', ''),
+                                        'arxiv_id': arxiv_id,
+                                        'primary_category': metadata.get('primary_category', ''),
+                                        'key_finding': entities.get('key_finding', ''),
                                         'alert_id': alert_id
                                     }
 

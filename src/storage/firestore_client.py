@@ -252,6 +252,32 @@ class FirestoreClient:
             return doc.to_dict()
         return None
 
+    def get_relationship_between_papers(self, source_paper_id: str, target_paper_id: str) -> Optional[Dict]:
+        """
+        Check if any relationship exists between two papers (regardless of type).
+
+        Args:
+            source_paper_id: Source paper ID
+            target_paper_id: Target paper ID
+
+        Returns:
+            First matching relationship data dictionary or None if not found
+        """
+        docs = (
+            self.db.collection(self.relationships_collection)
+            .where("source_paper_id", "==", source_paper_id)
+            .where("target_paper_id", "==", target_paper_id)
+            .limit(1)
+            .stream()
+        )
+
+        for doc in docs:
+            rel_data = doc.to_dict()
+            rel_data["relationship_id"] = doc.id
+            return rel_data
+
+        return None
+
     def get_relationships_for_paper(self, paper_id: str) -> List[Dict]:
         """
         Get all relationships where a paper is the source.

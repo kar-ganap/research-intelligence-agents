@@ -247,6 +247,28 @@ def upload_paper():
         if not file.filename.endswith('.pdf'):
             return jsonify({'error': 'Only PDF files are supported'}), 400
 
+        # Extract arXiv ID from filename
+        from src.utils.arxiv_fetcher import extract_arxiv_id, fetch_arxiv_metadata
+
+        arxiv_id = extract_arxiv_id(file.filename)
+        if not arxiv_id:
+            return jsonify({
+                'error': 'Could not extract arXiv ID from filename. '
+                         'Please use format: YYMM.NNNNN.pdf (e.g., 2411.04997.pdf)'
+            }), 400
+
+        logger.info(f"[Orchestrator] Extracted arXiv ID: {arxiv_id}")
+
+        # Fetch metadata from arXiv API
+        try:
+            arxiv_metadata = fetch_arxiv_metadata(arxiv_id)
+            logger.info(f"[Orchestrator] Fetched metadata: {arxiv_metadata['title'][:50]}...")
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 404
+        except Exception as e:
+            logger.error(f"[Orchestrator] arXiv API error: {str(e)}")
+            return jsonify({'error': f'Failed to fetch arXiv metadata: {str(e)}'}), 500
+
         # Generate unique ID for this upload
         upload_id = str(uuid.uuid4())
         logger.info(f"[Orchestrator] Processing upload: {upload_id}")
@@ -283,7 +305,15 @@ def upload_paper():
             'filename': file.filename,
             'storage_path': storage_path,
             'source': 'manual_upload',
-            'timestamp': str(json.dumps({}))  # Placeholder for timestamp
+            'arxiv_id': arxiv_metadata['arxiv_id'],
+            'title': arxiv_metadata['title'],
+            'authors': arxiv_metadata['authors'],
+            'abstract': arxiv_metadata['abstract'],
+            'categories': arxiv_metadata['categories'],
+            'primary_category': arxiv_metadata['primary_category'],
+            'published': arxiv_metadata['published'],
+            'updated': arxiv_metadata['updated'],
+            'pdf_url': arxiv_metadata['pdf_url']
         }
 
         logger.info(f"[Orchestrator] Publishing to Pub/Sub topic: arxiv.candidates")
