@@ -136,7 +136,7 @@ gcloud run deploy api-gateway \
   --allow-unauthenticated
 ```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment procedures.
+See [DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) for detailed deployment procedures.
 
 ---
 
@@ -229,7 +229,7 @@ See [docs/planning/IMPLEMENTATION_PLAN.md](docs/planning/IMPLEMENTATION_PLAN.md)
 ## 📚 Documentation
 
 ### 🎯 Quick Links
-- [DEMO_GUIDE.md](DEMO_GUIDE.md) - Hackathon presentation guide
+- [DEMO_GUIDE.md](docs/guides/DEMO_GUIDE.md) - Hackathon presentation guide
 - [API_REFERENCE.md](API_REFERENCE.md) - API endpoints and examples
 - [docs/CODEBASE_AUDIT_2025-11-08.md](docs/CODEBASE_AUDIT_2025-11-08.md) - Comprehensive codebase audit
 
@@ -247,7 +247,7 @@ See [docs/planning/IMPLEMENTATION_PLAN.md](docs/planning/IMPLEMENTATION_PLAN.md)
 
 ### 📋 Reference
 - [docs/reference/HackathonBrief.md](docs/reference/HackathonBrief.md) - Google Cloud Run Hackathon requirements
-- [FUTURE_ROADMAP.md](FUTURE_ROADMAP.md) - Planned features and enhancements
+- [FUTURE_ROADMAP.md](docs/planning/FUTURE_ROADMAP.md) - Planned features and enhancements
 
 ---
 
